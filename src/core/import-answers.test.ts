@@ -92,6 +92,26 @@ describe('应用核心 · 文本导入的答案段与判断题', () => {
     ]);
   });
 
+  it('选项写正确 / 错误或 √ / × 时推断为判断题', async () => {
+    const core = setup();
+    const [group] = await core.listGroups();
+    const draft = await core.importFromText([
+      '1. 补码的减法可以转换为加法。', 'A. 正确', 'B. 错误', '答案：A',
+      '2. 计算机使用二进制。', 'A. √', 'B. ×', '答案：B',
+    ].join('\n'));
+
+    expect(draft.questions.map((q) => q.type)).toEqual([
+      'truefalse', 'truefalse',
+    ]);
+    expect(draft.questions.map((q) => q.answerText)).toEqual(['√', '×']);
+    expect(draft.warnings).toEqual([]);
+    const written = await core.commitReview(draft, group.group.id);
+    expect(written[0].options).toEqual([
+      { letter: '√', text: '正确' }, { letter: '×', text: '错误' },
+    ]);
+    expect(written.map((q) => q.answer)).toEqual([['√'], ['×']]);
+  });
+
   it('判断符号全部变体都规范成 √ 或 ×', async () => {
     const core = setup();
     const cases: [string, string][] = [
