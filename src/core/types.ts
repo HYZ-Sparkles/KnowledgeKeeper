@@ -41,6 +41,9 @@ export interface QuestionInput {
   options: Option[];
   answer: string[];
   explanation: string;
+  /** Matching questions only; absent for the other question types. */
+  sharedOptions?: Option[] | null;
+  subQuestions?: SubQuestion[] | null;
 }
 
 /** A question with its derived state; no practice has happened yet for new questions. */

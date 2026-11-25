@@ -144,6 +144,7 @@ function RightRail({ route }: { route: Route }) {
           <h2 className="text-t14 font-semibold text-ink-2 mb-[10px]">录入</h2>
           <p className="text-t12_5 leading-[1.7] text-mute m-0">
             一份表单反复用：题型决定要填什么，解析可以不填。
+            匹配题用一组共用选项配多个子题，每个子题各自选答案。
             保存后留在表单，连续录入不用刷新。
           </p>
         </div>

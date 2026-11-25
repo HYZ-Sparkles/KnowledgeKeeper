@@ -76,6 +76,15 @@
            border-rule text-[12px] text-mute flex-none;
   }
   .form-missing { @apply text-[13px] text-orange m-0; }
+  .section-label { @apply text-[14px] font-semibold text-ink-2; }
+  .sub-block { @apply py-[14px] border-t border-rule; }
+  .sub-head { @apply flex items-center gap-[10px] flex-wrap mb-[10px]; }
+  .sub-type {
+    @apply h-[34px] px-[10px] rounded-3 border border-rule
+           text-[13px] text-mute;
+  }
+  .sub-type.on { @apply bg-blue-wash border-blue text-blue-ink; }
+  .shared-text { @apply flex-1 min-w-0 text-t14 text-ink; }
   .toast {
     @apply fixed left-1/2 bottom-7 -translate-x-1/2 translate-y-[14px]
            bg-ink text-paper text-t13_5 px-[18px] py-[11px] rounded-4

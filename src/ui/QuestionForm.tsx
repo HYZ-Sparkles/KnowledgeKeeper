@@ -11,11 +11,19 @@ export interface QuestionFormProps {
   onRequestCreateGroup?: () => void;
 }
 
+interface SubFormState {
+  stem: string;
+  type: 'single' | 'multiple';
+  answers: string[];
+}
+
 interface FormState {
   type: QuestionType;
   stem: string;
   options: string[];
   answers: string[];
+  sharedOptions: string[];
+  subs: SubFormState[];
   explanation: string;
 }
 
@@ -23,6 +31,7 @@ const TYPE_LABELS: Record<string, string> = {
   single: '单选题',
   multiple: '多选题',
   truefalse: '判断题',
+  matching: '匹配题',
 };
 
 const TRUE_FALSE_OPTIONS = [
@@ -48,6 +57,14 @@ function makeState(value?: QuestionInput): FormState {
     stem: value?.stem ?? '',
     options: value?.options.length ? value.options.map((o) => o.text) : ['', ''],
     answers: value?.answer ? [...value.answer] : [],
+    sharedOptions: value?.sharedOptions?.length
+      ? value.sharedOptions.map((o) => o.text)
+      : ['', ''],
+    subs: value?.subQuestions?.length
+      ? value.subQuestions.map((sub) => ({
+        stem: sub.stem, type: sub.type, answers: [...sub.answer],
+      }))
+      : [],
     explanation: value?.explanation ?? '',
   };
 }
@@ -62,13 +79,26 @@ export default function QuestionForm({
   onRequestCreateGroup,
 }: QuestionFormProps) {
   const [state, setState] = useState<FormState>(() => makeState(initialValue));
-  const { type, stem, options, answers, explanation } = state;
+  const { type, stem, options, answers, sharedOptions, subs, explanation } = state;
 
   useEffect(() => { setState(makeState(initialValue)); }, [initialValue]);
 
   const missing: string[] = [];
   if (!stem.trim()) missing.push('题干不能为空');
-  if (type === 'truefalse') {
+  if (type === 'matching') {
+    if (sharedOptions.length < 2) missing.push('至少要有 2 个共用选项');
+    if (subs.length < 1) missing.push('至少要有 1 个子题');
+    subs.forEach((sub, index) => {
+      const label = `子题 ${index + 1}`;
+      if (!sub.stem.trim()) missing.push(`${label}题干不能为空`);
+      if (sub.type === 'single' && sub.answers.length !== 1) {
+        missing.push(`${label}需要恰好 1 个正确答案`);
+      }
+      if (sub.type === 'multiple' && sub.answers.length < 2) {
+        missing.push(`${label}至少需要 2 个正确答案`);
+      }
+    });
+  } else if (type === 'truefalse') {
     if (answers.length !== 1) missing.push('判断题需要选一个答案');
   } else {
     if (options.length < 2) missing.push('至少要有 2 个选项');
@@ -118,16 +148,88 @@ export default function QuestionForm({
     });
   }
 
+  function toggleSubAnswer(subIndex: number, letter: string) {
+    setState((prev) => ({
+      ...prev,
+      subs: prev.subs.map((sub, index) => {
+        if (index !== subIndex) return sub;
+        if (sub.type === 'single') {
+          return {
+            ...sub,
+            answers: sub.answers.includes(letter) ? [] : [letter],
+          };
+        }
+        return {
+          ...sub,
+          answers: sub.answers.includes(letter)
+            ? sub.answers.filter((a) => a !== letter)
+            : [...sub.answers, letter],
+        };
+      }),
+    }));
+  }
+
+  function changeSubType(index: number, next: 'single' | 'multiple') {
+    setState((prev) => ({
+      ...prev,
+      subs: prev.subs.map((sub, i) => i !== index ? sub : {
+        ...sub,
+        type: next,
+        answers: next === 'single' && sub.answers.length > 1 ? [] : sub.answers,
+      }),
+    }));
+  }
+
+  /** Letters re-flow with the shared options, carrying each sub's answers. */
+  function removeSharedOption(index: number) {
+    setState((prev) => {
+      const removed = letterAt(index);
+      return {
+        ...prev,
+        sharedOptions: prev.sharedOptions.filter((_, i) => i !== index),
+        subs: prev.subs.map((sub) => ({
+          ...sub,
+          answers: sub.answers.flatMap((answer) => {
+            if (answer === removed) return [];
+            const oldIndex = prev.sharedOptions.findIndex(
+              (_, i) => letterAt(i) === answer);
+            if (oldIndex < 0) return [];
+            return [letterAt(oldIndex > index ? oldIndex - 1 : oldIndex)];
+          }),
+        })),
+      };
+    });
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (missing.length > 0) return;
-    const value: QuestionInput = type === 'truefalse'
+    const value: QuestionInput = type === 'matching'
+      ? {
+        type,
+        stem: stem.trim(),
+        options: [],
+        answer: [],
+        explanation,
+        sharedOptions: sharedOptions.map((text, index) => ({
+          letter: letterAt(index), text,
+        })),
+        subQuestions: subs.map((sub) => ({
+          stem: sub.stem.trim(),
+          type: sub.type,
+          answer: sub.answers.filter((letter) =>
+            sharedOptions.some((_, index) => letterAt(index) === letter)),
+        })),
+      }
+      : type === 'truefalse'
       ? {
         type,
         stem: stem.trim(),
         options: TRUE_FALSE_OPTIONS.map((o) => ({ ...o })),
         answer: answers.slice(0, 1),
         explanation,
+        sharedOptions: null,
+        subQuestions: null,
       }
       : {
         type,
@@ -138,6 +240,8 @@ export default function QuestionForm({
         answer: answers.filter((letter) =>
           options.some((_, index) => letterAt(index) === letter)),
         explanation,
+        sharedOptions: null,
+        subQuestions: null,
       };
     await onSubmit(value);
     if (mode === 'create') setState(makeState());
@@ -154,7 +258,7 @@ export default function QuestionForm({
             value={type}
             onChange={(event) => changeType(event.target.value as QuestionType)}
           >
-            {(['single', 'multiple', 'truefalse'] as const).map((value) => (
+            {(['single', 'multiple', 'truefalse', 'matching'] as const).map((value) => (
               <option key={value} value={value}>{TYPE_LABELS[value]}</option>
             ))}
           </select>
@@ -193,7 +297,123 @@ export default function QuestionForm({
         />
       </label>
 
-      {type === 'truefalse' ? (
+      {type === 'matching' ? (
+        <>
+          <div className="field">
+            <span className="section-label">共用选项</span>
+            <div>
+              {sharedOptions.map((text, index) => {
+                const letter = letterAt(index);
+                return (
+                  <div className="opt-row" key={index}>
+                    <span className="opt-letter">{letter}</span>
+                    <input
+                      className="field-input flex-1 min-w-0"
+                      aria-label={`共用选项 ${letter}`}
+                      value={text}
+                      onChange={(event) => update({
+                        sharedOptions: sharedOptions.map((item, i) =>
+                          i === index ? event.target.value : item),
+                      })}
+                    />
+                    <button
+                      type="button"
+                      className="opt-remove"
+                      aria-label={`删除共用选项 ${letter}`}
+                      onClick={() => removeSharedOption(index)}
+                    >
+                      删除
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              className="btn btn-ghost self-start"
+              onClick={() => update({ sharedOptions: [...sharedOptions, ''] })}
+            >
+              ＋ 再加一个共用选项
+            </button>
+          </div>
+
+          <div className="field">
+            <span className="section-label">子题</span>
+            {subs.map((sub, index) => (
+              <div className="sub-block" key={index}>
+                <div className="sub-head">
+                  <b className="text-t14 text-ink-2">子题 {index + 1}</b>
+                  <div className="flex gap-[6px]">
+                    <button
+                      type="button"
+                      className={`sub-type ${sub.type === 'single' ? 'on' : ''}`}
+                      onClick={() => changeSubType(index, 'single')}
+                    >
+                      单选
+                    </button>
+                    <button
+                      type="button"
+                      className={`sub-type ${sub.type === 'multiple' ? 'on' : ''}`}
+                      onClick={() => changeSubType(index, 'multiple')}
+                    >
+                      多选
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    className="opt-remove ml-auto"
+                    onClick={() => update({
+                      subs: subs.filter((_, i) => i !== index),
+                    })}
+                  >
+                    删除子题
+                  </button>
+                </div>
+                <label className="field mb-[10px]">
+                  <span>子题题干</span>
+                  <input
+                    className="field-input w-full"
+                    aria-label={`子题 ${index + 1} 题干`}
+                    value={sub.stem}
+                    onChange={(event) => update({
+                      subs: subs.map((item, i) =>
+                        i === index ? { ...item, stem: event.target.value } : item),
+                    })}
+                  />
+                </label>
+                <div>
+                  {sharedOptions.map((text, i) => {
+                    const letter = letterAt(i);
+                    return (
+                      <div className="opt-row" key={letter}>
+                        <span className="opt-letter">{letter}</span>
+                        <span className="shared-text">{text}</span>
+                        <button
+                          type="button"
+                          className={`opt-pick w-auto px-[12px] ${sub.answers.includes(letter) ? 'on' : ''}`}
+                          aria-label={`把子题 ${index + 1} 的 ${letter} 标为正确`}
+                          onClick={() => toggleSubAnswer(index, letter)}
+                        >
+                          正确
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="btn btn-ghost self-start mt-[10px]"
+              onClick={() => update({
+                subs: [...subs, { stem: '', type: 'single', answers: [] }],
+              })}
+            >
+              ＋ 再加一个子题
+            </button>
+          </div>
+        </>
+      ) : type === 'truefalse' ? (
         <div className="field">
           <span>答案</span>
           <div className="flex gap-[10px] flex-wrap">

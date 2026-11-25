@@ -102,4 +102,50 @@ describe('应用核心 · 手动录入', () => {
 
     expect(await core.getQuestion(created.id)).toEqual(created);
   });
+
+  it('匹配题作为一道题读回时，共用选项与子题和录入一致', async () => {
+    const core = setup();
+    const [group] = await core.listGroups();
+    const input: QuestionInput = {
+      type: 'matching',
+      stem: '把作者与作品对应起来',
+      options: [],
+      answer: [],
+      explanation: '解析',
+      sharedOptions: [
+        { letter: 'A', text: '鲁迅' },
+        { letter: 'B', text: '茅盾' },
+        { letter: 'C', text: '老舍' },
+      ],
+      subQuestions: [
+        { stem: '《呐喊》的作者', type: 'single', answer: ['A'] },
+        {
+          stem: '《子夜》与《骆驼祥子》的作者',
+          type: 'multiple',
+          answer: ['B', 'C'],
+        },
+      ],
+    };
+
+    const created = await core.createQuestion(input, group.group.id);
+    const list = await core.listQuestions(group.group.id);
+    const readBack = await core.getQuestion(created.id);
+
+    expect(list).toHaveLength(1);
+    expect(readBack).toMatchObject({
+      id: created.id,
+      groupId: group.group.id,
+      type: 'matching',
+      stem: input.stem,
+      sharedOptions: input.sharedOptions,
+      subQuestions: input.subQuestions,
+      explanation: '解析',
+      favorite: false,
+    });
+    expect(readBack.options).toEqual([]);
+    expect(readBack.answer).toEqual([]);
+    expect(readBack.schedule).toEqual({ stage: 0, dueDate: null });
+    expect(readBack.correctCount).toBe(0);
+    expect(readBack.wrongCount).toBe(0);
+  });
 });

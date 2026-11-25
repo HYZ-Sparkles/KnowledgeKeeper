@@ -132,16 +132,10 @@ export function createCore(deps: CoreDeps): Core {
       const question: Question = {
         id: generateId(random, 'q'),
         groupId,
-        type: input.type,
-        stem: input.stem,
-        options: input.options.map((option) => ({ ...option })),
-        answer: [...input.answer],
-        explanation: input.explanation,
+        ...editableFields(input),
         favorite: false,
         importOrder: questions.reduce(
           (max, q) => Math.max(max, q.importOrder), 0) + 1,
-        sharedOptions: null,
-        subQuestions: null,
       };
       await storage.putQuestion(question);
       return toQuestionView(question, {}, []);
@@ -169,6 +163,25 @@ export function createCore(deps: CoreDeps): Core {
       if (!found) throw new Error('题目不存在');
       return toQuestionView(found, schedules, attempts);
     },
+  };
+}
+
+/** Copy the UI-owned fields; id/group/favorite/importOrder are not editable. */
+function editableFields(input: QuestionInput) {
+  return {
+    type: input.type,
+    stem: input.stem,
+    options: input.options.map((option) => ({ ...option })),
+    answer: [...input.answer],
+    explanation: input.explanation,
+    sharedOptions: input.sharedOptions
+      ? input.sharedOptions.map((option) => ({ ...option }))
+      : null,
+    subQuestions: input.subQuestions
+      ? input.subQuestions.map((sub) => ({
+        stem: sub.stem, type: sub.type, answer: [...sub.answer],
+      }))
+      : null,
   };
 }
 
