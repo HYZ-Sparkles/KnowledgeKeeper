@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
+import { isDue, localDay } from '../core';
 import type { Core } from '../core';
 import type { GroupSummary, RoundItem, SubmitResult } from '../core/types';
 import { navigate } from '../router';
 import Breadcrumb from './Breadcrumb';
 import { TYPE_LABELS } from './labels';
-import {
-  localDayString, scheduleConsequence, scheduleIsDue, scheduleLabel,
-} from './scheduleCopy';
+import { scheduleConsequence, scheduleLabel } from './scheduleCopy';
 
 function formatLetters(letters: readonly string[]): string {
   return letters.join(' ');
@@ -46,9 +45,8 @@ export default function PracticeView({
     setDueLeft(0);
     void core.startRound(groupId).then((list) => {
       setItems(list);
-      const today = localDayString(new Date());
-      setDueLeft(list.filter((entry) =>
-        scheduleIsDue(entry.schedule, today)).length);
+      const today = localDay(new Date());
+      setDueLeft(list.filter((entry) => isDue(entry.schedule, today)).length);
     }, () => setItems([]));
   }
 
@@ -99,7 +97,7 @@ export default function PracticeView({
     const answer = item.type === 'matching'
       ? subs.map((_, position) => subPicked[position] ?? [])
       : picked;
-    const wasDue = scheduleIsDue(item.schedule, localDayString(new Date()));
+    const wasDue = isDue(item.schedule, localDay(new Date()));
     setSubmitting(true);
     try {
       const outcome = await core.submitAnswer(item.id, answer);
@@ -214,7 +212,7 @@ export default function PracticeView({
             <span className="num">
               {scheduleLabel(
                 item.schedule, item.correctCount, item.wrongCount,
-                localDayString(new Date()),
+                localDay(new Date()),
               )}
             </span>
             <button

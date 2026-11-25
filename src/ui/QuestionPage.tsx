@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { localDay } from '../core';
 import type { Core } from '../core';
 import type {
   GroupSummary, QuestionInput, QuestionView as QuestionViewData,
@@ -8,7 +9,7 @@ import Breadcrumb from './Breadcrumb';
 import Dialog from './Dialog';
 import { TYPE_LABELS } from './labels';
 import QuestionForm from './QuestionForm';
-import { localDayString, scheduleRowText } from './scheduleCopy';
+import { scheduleRowText } from './scheduleCopy';
 
 /** The group list row opens here; the form is the same one used for entry. */
 export default function QuestionPage({
@@ -68,7 +69,7 @@ export default function QuestionPage({
   if (missing) return <p className="text-t14 text-faint">题目不存在。</p>;
   if (!question) return null;
 
-  const today = localDayString(new Date());
+  const today = localDay(new Date());
 
   const actions = (
     <>

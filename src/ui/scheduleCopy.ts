@@ -1,32 +1,10 @@
-import { INTERVALS } from '../core';
+import { INTERVALS, scheduleState } from '../core';
 import type { Schedule, SubmitResult } from '../core/types';
-
-type State = 'unscheduled' | 'reviewing' | 'complete';
-
-function stateOf(schedule: Schedule): State {
-  if (schedule.completed) return 'complete';
-  if (schedule.stage >= 1 && schedule.stage <= 6 && schedule.dueDate) {
-    return 'reviewing';
-  }
-  return 'unscheduled';
-}
-
-/** Local calendar day for presentation; the core owns all schedule maths. */
-export function localDayString(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
+import { calendarValue } from './dayValue';
 
 function friendlyDate(day: string): string {
   const [, month, date] = day.split('-');
   return `${Number(month)} 月 ${Number(date)} 日`;
-}
-
-function calendarValue(day: string): number {
-  const [year, month, date] = day.split('-').map(Number);
-  return Date.UTC(year, month - 1, date);
 }
 
 function dueText(schedule: Schedule, today: string): string {
@@ -41,22 +19,15 @@ function dueText(schedule: Schedule, today: string): string {
 
 /** Schedule-only text for group list rows. */
 export function scheduleText(schedule: Schedule, today: string): string {
-  const state = stateOf(schedule);
+  const state = scheduleState(schedule);
   if (state === 'unscheduled') return '未排期';
   if (state === 'complete') return '完成复习';
   return `第 ${schedule.stage} 个间隔 · ${dueText(schedule, today)}`;
 }
 
-/** True only when a reviewing question's local due day has arrived. */
-export function scheduleIsDue(schedule: Schedule, today: string): boolean {
-  return stateOf(schedule) === 'reviewing'
-    && schedule.dueDate !== null
-    && schedule.dueDate <= today;
-}
-
 /** Compact group-row copy; the practice label keeps the long form. */
 export function scheduleRowText(schedule: Schedule, today: string): string {
-  const state = stateOf(schedule);
+  const state = scheduleState(schedule);
   if (state === 'unscheduled') return '未排期';
   if (state === 'complete') return '完成复习';
   return `第 ${schedule.stage}/6 · ${dueText(schedule, today)}`;
@@ -67,7 +38,7 @@ export function scheduleLabel(
   schedule: Schedule, correctCount: number, wrongCount: number, today: string,
 ): string {
   const stats = `${correctCount} 对 ${wrongCount} 错`;
-  const state = stateOf(schedule);
+  const state = scheduleState(schedule);
   if (state === 'unscheduled') return `从没做错过 · ${stats}`;
   if (state === 'complete') return `完成复习 · ${stats}`;
   return `${scheduleText(schedule, today)} · ${stats}`;
@@ -75,7 +46,7 @@ export function scheduleLabel(
 
 /** The seven-row consequence table, read only from before/after states. */
 export function scheduleConsequence(result: SubmitResult): string {
-  const before = stateOf(result.before);
+  const before = scheduleState(result.before);
   if (before === 'unscheduled') {
     return result.correct
       ? '从没做错过，不排期，只跟着轮次出现。'
@@ -98,12 +69,12 @@ export function scheduleConsequence(result: SubmitResult): string {
 
 /** Six cells; the intervals already passed are solid. */
 export function rulerCells(schedule: Schedule): boolean[] {
-  const passed = stateOf(schedule) === 'reviewing' ? schedule.stage : 0;
+  const passed = scheduleState(schedule) === 'reviewing' ? schedule.stage : 0;
   return Array.from({ length: INTERVALS.length }, (_, index) => index < passed);
 }
 
 export function rulerNote(schedule: Schedule): string {
-  const state = stateOf(schedule);
+  const state = scheduleState(schedule);
   if (state === 'unscheduled') {
     return '从没做错过，只有答错才会进入第 1 个间隔。';
   }

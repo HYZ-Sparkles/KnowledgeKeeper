@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import { isDue } from '../core';
 import type { Schedule, SubmitResult } from '../core/types';
 import {
-  rulerCells, rulerNote, scheduleConsequence, scheduleIsDue, scheduleLabel,
+  rulerCells, rulerNote, scheduleConsequence, scheduleLabel,
   scheduleRowText, scheduleText,
 } from './scheduleCopy';
 
@@ -66,14 +67,14 @@ describe('分组题目行的紧凑排期文案', () => {
   });
 
   it('只有到期的复习题标为到期', () => {
-    expect(scheduleIsDue({ stage: 3, dueDate: '2026-10-12' }, '2026-10-14'))
+    expect(isDue({ stage: 3, dueDate: '2026-10-12' }, '2026-10-14'))
       .toBe(true);
-    expect(scheduleIsDue({ stage: 3, dueDate: '2026-10-14' }, '2026-10-14'))
+    expect(isDue({ stage: 3, dueDate: '2026-10-14' }, '2026-10-14'))
       .toBe(true);
-    expect(scheduleIsDue({ stage: 3, dueDate: '2026-10-15' }, '2026-10-14'))
+    expect(isDue({ stage: 3, dueDate: '2026-10-15' }, '2026-10-14'))
       .toBe(false);
-    expect(scheduleIsDue(unscheduled, '2026-10-14')).toBe(false);
-    expect(scheduleIsDue(complete, '2026-10-14')).toBe(false);
+    expect(isDue(unscheduled, '2026-10-14')).toBe(false);
+    expect(isDue(complete, '2026-10-14')).toBe(false);
   });
 });
 

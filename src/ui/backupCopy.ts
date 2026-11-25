@@ -1,15 +1,11 @@
+import { localDay } from '../core';
 import type { LibraryMeta } from '../core/types';
-import { localDayString } from './scheduleCopy';
-
-function calendarValue(day: string): number {
-  const [year, month, date] = day.split('-').map(Number);
-  return Date.UTC(year, month - 1, date);
-}
+import { calendarValue } from './dayValue';
 
 /** Whole local-calendar-day gap; a clock in the future is never overdue. */
 export function daysSinceLocal(iso: string, now: Date = new Date()): number {
-  const diff = calendarValue(localDayString(now))
-    - calendarValue(localDayString(new Date(iso)));
+  const diff = calendarValue(localDay(now))
+    - calendarValue(localDay(new Date(iso)));
   return Math.max(0, Math.round(diff / 86_400_000));
 }
 

@@ -13,13 +13,17 @@ import { parseExcel } from './internal/parseExcel';
 import { excelTemplate } from './internal/excelTemplate';
 import { grade, gradeMatching } from './internal/grade';
 import { buildRound } from './internal/round';
-import { advance, localDay } from './internal/schedule';
+import {
+  advance, isDue, localDay, scheduleState,
+} from './internal/schedule';
 import {
   BACKUP_SCHEMA_VERSION, serializeBackup, parseBackup,
   inspectBackup as inspectBackupJson, type BackupSnapshot,
 } from './internal/backup';
 
-export { INTERVALS } from './internal/schedule';
+export {
+  INTERVALS, isDue, localDay, scheduleState, type ScheduleState,
+} from './internal/schedule';
 
 export interface CoreDeps {
   storage: StorageAdapter;
@@ -214,16 +218,14 @@ export function createCore(deps: CoreDeps): Core {
             buckets[schedule.stage - 1] += 1;
           } else buckets[7] += 1;
         }
-        const dueCount = groupQuestions.filter((q) => {
-          const s = schedules[q.id];
-          if (!s || s.stage < 1 || s.stage > 6 || !s.dueDate) return false;
-          const today = localDay(clock.now());
-          return s.dueDate <= today;
-        }).length;
-        const inReviewCount = groupQuestions.filter((q) => {
-          const stage = schedules[q.id]?.stage ?? 0;
-          return stage >= 1 && stage <= 6;
-        }).length;
+        const today = localDay(clock.now());
+        const dueCount = groupQuestions.filter(
+          (q) => isDue(schedules[q.id], today),
+        ).length;
+        const inReviewCount = groupQuestions.filter((q) =>
+          scheduleState(schedules[q.id] ?? { stage: 0, dueDate: null })
+            === 'reviewing',
+        ).length;
         const groupAttempts = attempts.filter((a) =>
           groupQuestions.some((q) => q.id === a.questionId));
         const correctRate = groupAttempts.length === 0

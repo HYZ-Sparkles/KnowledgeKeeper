@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { isDue, localDay } from '../core';
 import type { Core } from '../core';
 import type { GroupSummary, QuestionView } from '../core/types';
 import { navigate } from '../router';
@@ -6,9 +7,7 @@ import Breadcrumb from './Breadcrumb';
 import Dialog from './Dialog';
 import { writeEntryGroupId, writeImportGroupId } from './deviceState';
 import { TYPE_LABELS } from './labels';
-import {
-  localDayString, scheduleIsDue, scheduleRowText,
-} from './scheduleCopy';
+import { scheduleRowText } from './scheduleCopy';
 
 /** The eight fixed ticks of the schedule distribution, in core order. */
 const RULER_TICKS = [
@@ -34,7 +33,7 @@ export default function GroupView({
   const practiceCount = questions?.length ?? 0;
   const questionCount = summary?.questionCount ?? 0;
   const dueInGroup = summary?.dueCount ?? 0;
-  const today = localDayString(new Date());
+  const today = localDay(new Date());
   const maxCount = Math.max(1, ...(summary?.distribution ?? []));
 
   useEffect(() => {
@@ -186,7 +185,7 @@ export default function GroupView({
                 <span className="qtype">{TYPE_LABELS[question.type]}</span>
                 <span className="row-title flex-1 min-w-0">{question.stem}</span>
                 <span className={`meta flex-none text-t13_5 num w-[152px] text-right ${
-                  scheduleIsDue(question.schedule, today) ? 'text-orange' : 'text-faint'
+                  isDue(question.schedule, today) ? 'text-orange' : 'text-faint'
                 }`}>
                   {scheduleRowText(question.schedule, today)}
                 </span>
