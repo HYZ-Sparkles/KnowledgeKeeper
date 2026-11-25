@@ -42,6 +42,9 @@ export default function App({ core }: { core: Core }) {
   const effectiveRoute: Route = route.name === 'group' && !route.groupId && groups?.length
     ? { name: 'group', groupId: groups[0].group.id }
     : route;
+  const activeGroup: GroupSummary | null = effectiveRoute.name === 'group'
+    ? (groups ?? []).find((g) => g.group.id === effectiveRoute.groupId) ?? null
+    : null;
 
   const today = new Intl.DateTimeFormat('zh-CN', {
     month: 'long', day: 'numeric', weekday: 'short',
@@ -93,7 +96,11 @@ export default function App({ core }: { core: Core }) {
             />
           )}
         </main>
-        <RightRail route={effectiveRoute} practiceItem={practiceItem} />
+        <RightRail
+          route={effectiveRoute}
+          practiceItem={practiceItem}
+          group={activeGroup}
+        />
       </div>
       <Toast key={toast?.id ?? 0} message={toast?.text ?? null} onClose={closeToast} />
     </>
@@ -163,8 +170,12 @@ function LeftRail({ groups, route }: { groups: GroupSummary[]; route: Route }) {
 }
 
 function RightRail({
-  route, practiceItem,
-}: { route: Route; practiceItem: RoundItem | null }) {
+  route, practiceItem, group,
+}: {
+  route: Route;
+  practiceItem: RoundItem | null;
+  group: GroupSummary | null;
+}) {
   if (route.name === 'practice') {
     const schedule = practiceItem?.schedule ?? { stage: 0, dueDate: null };
     return (
@@ -180,6 +191,27 @@ function RightRail({
           </div>
           <p className="text-t12_5 leading-[1.7] text-mute m-0 mt-[6px]">
             {rulerNote(schedule)}
+          </p>
+        </div>
+      </aside>
+    );
+  }
+  if (route.name === 'group') {
+    const total = group?.questionCount ?? 0;
+    const due = group?.dueCount ?? 0;
+    return (
+      <aside className="rail-right">
+        <div className="mb-[26px]">
+          <h2 className="mb-[10px] text-[14.5px] font-semibold text-ink-2">
+            本轮
+          </h2>
+          <p className="m-0 text-t12_5 leading-[1.7] text-mute">
+            {due > 0
+              ? `到期 ${due} 道按到期日从早到晚排在前面，其余 ${total - due} 道打乱跟上。`
+              : `这一组没有到期的题，${total} 道全部打乱。`}
+          </p>
+          <p className="m-0 mt-[6px] text-t12_5 leading-[1.7] text-mute">
+            一轮 {total} 道，做完自动重新打乱，不记录中断位置。
           </p>
         </div>
       </aside>
@@ -236,7 +268,7 @@ function HomeView({ groups, meta }: { groups: GroupSummary[]; meta: LibraryMeta 
         1、2、4、7、15、30 天重新出现，直到通过最后一个间隔。
       </p>
       <div className="pills">
-        <span className={`pill ${dueTotal > 0 ? 'bg-orange-wash text-[#9C5620]' : 'bg-blue-wash text-blue-ink'}`}>
+        <span className="pill bg-orange-wash text-[#9C5620]">
           <b className="num">{dueTotal}</b> 道今天到期
         </span>
         <span className="pill bg-blue-wash text-blue-ink">
@@ -248,22 +280,31 @@ function HomeView({ groups, meta }: { groups: GroupSummary[]; meta: LibraryMeta 
       </div>
       <hr className="hairline" />
       <ul className="dotlist list-none m-0 p-0">
-        {groups.map(({ group, questionCount, correctRate, dueCount }) => (
-          <li key={group.id}>
-            <button className="row flex w-full items-baseline gap-[14px] py-[15px] text-left"
-              onClick={() => navigate({ name: 'group', groupId: group.id })}>
-              <span className="text-amber text-[19px] leading-none flex-none">·</span>
-              <span className="row-title flex-1 min-w-0">{group.name}</span>
-              <span className="meta flex-none text-t13 text-mute num flex items-center gap-[14px]">
-                <span>{questionCount} 题</span>
-                <span>{correctRate === null ? '尚未练习' : `正确率 ${Math.round(correctRate * 100)}%`}</span>
-                <span className={dueCount > 0 ? 'text-orange' : 'text-green'}>
-                  {dueCount > 0 ? `到期 ${dueCount}` : '无到期'}
+        {groups.map(({ group, questionCount, correctRate, dueCount }) => {
+          const rate = correctRate === null ? null : Math.round(correctRate * 100);
+          return (
+            <li key={group.id}>
+              <button className="row flex w-full items-baseline gap-[14px] py-[15px] text-left"
+                onClick={() => navigate({ name: 'group', groupId: group.id })}>
+                <span className="text-amber text-[19px] leading-none flex-none">·</span>
+                <span className="row-title flex-1 min-w-0">{group.name}</span>
+                <span className="meta flex-none text-t13 text-mute num flex items-center gap-[14px]">
+                  <span>{questionCount} 题</span>
+                  {rate === null ? (
+                    <span>尚未练习</span>
+                  ) : (
+                    <span className="rate">
+                      正确率 {rate}%<i><b style={{ width: `${rate}%` }} /></i>
+                    </span>
+                  )}
+                  <span className={dueCount > 0 ? 'text-orange' : 'text-green'}>
+                    {dueCount > 0 ? `到期 ${dueCount}` : '无到期'}
+                  </span>
                 </span>
-              </span>
-            </button>
-          </li>
-        ))}
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </>
   );

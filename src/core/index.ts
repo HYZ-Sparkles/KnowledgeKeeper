@@ -1,6 +1,6 @@
 import type {
-  Clock, Random, StorageAdapter, Group, GroupSummary, LibraryMeta,
-  Question, QuestionInput, QuestionView, Schedule, Attempt,
+  Clock, Random, StorageAdapter, Group, GroupSummary, GroupTypeCounts,
+  LibraryMeta, Question, QuestionInput, QuestionView, Schedule, Attempt,
   RoundItem, SubmittedAnswer, SubmitResult,
 } from './types';
 import { grade } from './internal/grade';
@@ -78,6 +78,18 @@ export function createCore(deps: CoreDeps): Core {
 
       return groups.map((group) => {
         const groupQuestions = questions.filter((q) => q.groupId === group.id);
+        const typeCounts: GroupTypeCounts = {
+          single: 0, multiple: 0, truefalse: 0, matching: 0,
+        };
+        const buckets = [0, 0, 0, 0, 0, 0, 0, 0];
+        for (const question of groupQuestions) {
+          typeCounts[question.type] += 1;
+          const schedule = schedules[question.id];
+          if (schedule?.completed) buckets[6] += 1;
+          else if (schedule && schedule.stage >= 1 && schedule.stage <= 6) {
+            buckets[schedule.stage - 1] += 1;
+          } else buckets[7] += 1;
+        }
         const dueCount = groupQuestions.filter((q) => {
           const s = schedules[q.id];
           if (!s || s.stage < 1 || s.stage > 6 || !s.dueDate) return false;
@@ -100,6 +112,11 @@ export function createCore(deps: CoreDeps): Core {
           dueCount,
           inReviewCount,
           correctRate,
+          typeCounts,
+          distribution: [
+            buckets[0], buckets[1], buckets[2], buckets[3],
+            buckets[4], buckets[5], buckets[6], buckets[7],
+          ],
         };
       });
     },

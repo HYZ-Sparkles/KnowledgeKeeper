@@ -16,6 +16,11 @@ const TYPE_LABELS: Record<string, string> = {
   matching: '匹配题',
 };
 
+/** The eight fixed ticks of the schedule distribution, in core order. */
+const RULER_TICKS = [
+  '1 天', '2 天', '4 天', '7 天', '15 天', '30 天', '完成复习', '未排期',
+];
+
 export default function GroupView({
   core, groupId, groups, refreshGroups, showToast,
 }: {
@@ -35,6 +40,7 @@ export default function GroupView({
   const questionCount = summary?.questionCount ?? 0;
   const dueInGroup = summary?.dueCount ?? 0;
   const today = localDayString(new Date());
+  const maxCount = Math.max(1, ...(summary?.distribution ?? []));
 
   useEffect(() => {
     let active = true;
@@ -70,9 +76,48 @@ export default function GroupView({
       <h1 className="text-t40 font-bold text-ink-2 mb-3 tracking-[-.3px]">{name}</h1>
       <p className="text-t15 text-mute mb-[18px] max-w-[62ch]">
         {summary?.questionCount ?? 0} 道题，
-        总体正确率 {summary?.correctRate == null ? '尚未练习' : `${Math.round(summary.correctRate * 100)}%`}，
+        {summary?.correctRate == null
+          ? '尚未练习'
+          : `总体正确率 ${Math.round(summary.correctRate * 100)}%`}，
         今天到期 {summary?.dueCount ?? 0} 道。到期题排在最前面，最久到期的先出。
       </p>
+      {summary && (
+        <>
+          <div className="pills">
+            {(['single', 'multiple', 'truefalse', 'matching'] as const)
+              .map((type) => summary.typeCounts[type] > 0 ? (
+                <span className="pill bg-blue-wash text-blue-ink" key={type}>
+                  {TYPE_LABELS[type]} <b className="num">{summary.typeCounts[type]}</b>
+                </span>
+              ) : null)}
+          </div>
+          <div className="sched">
+            <div className="sched-h">
+              排期分布 <b>{summary.questionCount} 道题</b>
+            </div>
+            <div className="ruler">
+              {summary.distribution.map((count, tick) => {
+                const height = count === 0
+                  ? 2 : Math.round(10 + (count / maxCount) * 30);
+                return (
+                  <div
+                    key={RULER_TICKS[tick]}
+                    className={`${tick >= 6 ? 'rest' : ''} ${count === 0 ? 'zero' : ''}`}
+                  >
+                    <span>{count || ''}</span>
+                    <i style={{ height: `${height}px` }} />
+                  </div>
+                );
+              })}
+            </div>
+            <div className="sched-legend">
+              {RULER_TICKS.map((label, tick) => (
+                <div key={label} className={tick >= 6 ? 'rest' : ''}>{label}</div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
       <div className="toolbar">
         <button
           className="btn btn-primary"

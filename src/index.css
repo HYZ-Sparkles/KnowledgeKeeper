@@ -44,6 +44,33 @@
     @apply inline-flex items-center gap-[6px] h-[26px] px-[11px]
            rounded-[13px] text-t12_5;
   }
+  .rate { @apply inline-flex items-center gap-[7px] text-mute; }
+  .rate i { @apply block h-[3px] w-[52px] flex-none bg-[#EDE7DD]; }
+  .rate i b { @apply block h-full bg-amber-fill; }
+
+  /* 分组页排期分布：一根基线与八个刻度，零刻度只留 2px 灰线。 */
+  .sched { @apply mb-[2px] mt-[24px] max-w-[640px]; }
+  .sched-h {
+    @apply mb-[14px] flex items-baseline gap-[8px] text-t12_5 text-mute;
+  }
+  .sched-h b { @apply font-medium text-ink-2; }
+  .ruler { @apply relative flex h-[56px] items-end border-b border-rule; }
+  .ruler div {
+    @apply relative flex h-full flex-1 flex-col items-center justify-end;
+  }
+  .ruler i { @apply block w-[2px] bg-orange-fill; }
+  .ruler div.rest i { @apply bg-[#BEA98F]; }
+  .ruler div.zero i { @apply h-[2px] bg-[#E2D9CB]; }
+  .ruler span {
+    @apply absolute top-0 text-[11px] leading-none text-mute;
+    font-variant-numeric: tabular-nums;
+  }
+  .ruler div.zero span { @apply hidden; }
+  .sched-legend { @apply mt-[6px] flex; }
+  .sched-legend div {
+    @apply flex-1 text-center text-[11.5px] leading-[1.4] text-mute;
+  }
+  .sched-legend div.rest { @apply text-faint; }
   .btn {
     @apply inline-flex items-center justify-center gap-[7px] h-tap px-[18px]
            rounded-4 border border-rule bg-paper text-[14.5px] text-ink;

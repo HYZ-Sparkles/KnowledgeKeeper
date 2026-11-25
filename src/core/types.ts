@@ -89,12 +89,27 @@ export interface LibraryMeta {
   lastBackupAt: string | null;
 }
 
+/** Per-type question counts shown as group-page pills. */
+export interface GroupTypeCounts {
+  single: number;
+  multiple: number;
+  truefalse: number;
+  matching: number;
+}
+
+/** Eight ordered ticks: stages 1–6, review complete, unscheduled. */
+export type GroupDistribution = readonly [
+  number, number, number, number, number, number, number, number,
+];
+
 export interface GroupSummary {
   group: Group;
   questionCount: number;
   dueCount: number;
   inReviewCount: number;
   correctRate: number | null;
+  typeCounts: GroupTypeCounts;
+  distribution: GroupDistribution;
 }
 
 /** The single storage interface. Both IndexedDB and in-memory implement it. */
