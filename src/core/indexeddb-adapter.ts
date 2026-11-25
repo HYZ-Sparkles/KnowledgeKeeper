@@ -38,7 +38,9 @@ export function indexedDbAdapter(): StorageAdapter {
       const rows = await db.schedules.toArray();
       const out: Record<string, Schedule> = {};
       for (const row of rows) {
-        out[row.id] = { stage: row.stage, dueDate: row.dueDate };
+        out[row.id] = row.completed
+          ? { stage: row.stage, dueDate: row.dueDate, completed: true }
+          : { stage: row.stage, dueDate: row.dueDate };
       }
       return out;
     },

@@ -4,11 +4,12 @@ export type Route =
   | { name: 'question'; questionId: string }
   | { name: 'practice'; groupId: string }
   | { name: 'import' }
-  | { name: 'entry' };
+  | { name: 'entry' }
+  | { name: 'backup' };
 
 /** Hash router: no hash (or #home) -> home; #group/<id> -> group;
  * #question/<id> -> question; #practice/<id> -> practice; #import -> import;
- * #entry -> entry. */
+ * #entry -> entry; #backup -> backup. */
 export function parseHash(hash: string): Route {
   const raw = hash.replace(/^#\/?/, '');
   if (raw.startsWith('group')) {
@@ -25,6 +26,7 @@ export function parseHash(hash: string): Route {
   }
   if (raw === 'import') return { name: 'import' };
   if (raw === 'entry') return { name: 'entry' };
+  if (raw === 'backup') return { name: 'backup' };
   return { name: 'home' };
 }
 
@@ -39,6 +41,8 @@ export function navigate(route: Route): void {
     window.location.hash = '#entry';
   } else if (route.name === 'import') {
     window.location.hash = '#import';
+  } else if (route.name === 'backup') {
+    window.location.hash = '#backup';
   } else if (route.name === 'question') {
     window.location.hash = `#question/${route.questionId}`;
   } else if (route.name === 'practice') {

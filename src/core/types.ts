@@ -161,6 +161,12 @@ export interface LibraryMeta {
   lastBackupAt: string | null;
 }
 
+/** Counts behind the backup page's 「N 道题 · M 条作答」 pill. */
+export interface LibraryCounts {
+  questions: number;
+  attempts: number;
+}
+
 /** Per-type question counts shown as group-page pills. */
 export interface GroupTypeCounts {
   single: number;

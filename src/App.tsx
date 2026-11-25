@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Core } from './core';
-import type { GroupSummary, LibraryMeta, RoundItem } from './core/types';
+import type {
+  GroupSummary, LibraryCounts, LibraryMeta, RoundItem,
+} from './core/types';
 import { currentRoute, navigate, type Route } from './router';
+import BackupView from './ui/BackupView';
+import { backupBadge, backupRailText } from './ui/backupCopy';
 import Breadcrumb from './ui/Breadcrumb';
 import EntryView from './ui/EntryView';
 import GroupView from './ui/GroupView';
@@ -15,6 +19,7 @@ export default function App({ core }: { core: Core }) {
   const [route, setRoute] = useState<Route>(currentRoute);
   const [groups, setGroups] = useState<GroupSummary[] | null>(null);
   const [meta, setMeta] = useState<LibraryMeta | null>(null);
+  const [counts, setCounts] = useState<LibraryCounts | null>(null);
   const [practiceItem, setPracticeItem] = useState<RoundItem | null>(null);
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
 
@@ -30,11 +35,12 @@ export default function App({ core }: { core: Core }) {
   }, []);
 
   const refresh = useCallback(async () => {
-    const [list, libraryMeta] = await Promise.all([
-      core.listGroups(), core.getMeta(),
+    const [list, libraryMeta, libraryCounts] = await Promise.all([
+      core.listGroups(), core.getMeta(), core.getLibraryCounts(),
     ]);
     setGroups(list);
     setMeta(libraryMeta);
+    setCounts(libraryCounts);
   }, []);
 
   useEffect(() => { void refresh(); }, [refresh]);
@@ -56,7 +62,8 @@ export default function App({ core }: { core: Core }) {
     <>
       <Topbar
         active={effectiveRoute.name === 'import'
-          ? 'import' : effectiveRoute.name === 'entry' ? 'entry' : 'library'}
+          ? 'import' : effectiveRoute.name === 'entry' ? 'entry'
+            : effectiveRoute.name === 'backup' ? 'backup' : 'library'}
         today={today}
         dueTotal={dueTotal}
       />
@@ -96,6 +103,14 @@ export default function App({ core }: { core: Core }) {
               onItemChange={setPracticeItem}
               showToast={showToast}
             />
+          ) : effectiveRoute.name === 'backup' ? (
+            <BackupView
+              core={core}
+              meta={meta}
+              counts={counts}
+              refreshMeta={refresh}
+              showToast={showToast}
+            />
           ) : (
             <GroupView
               core={core}
@@ -110,6 +125,7 @@ export default function App({ core }: { core: Core }) {
           route={effectiveRoute}
           practiceItem={practiceItem}
           group={activeGroup}
+          meta={meta}
         />
       </div>
       <Toast key={toast?.id ?? 0} message={toast?.text ?? null} onClose={closeToast} />
@@ -124,6 +140,7 @@ function Topbar({
     { key: 'library', label: '题库', hash: '#home' },
     { key: 'import', label: '导入', hash: '#import' },
     { key: 'entry', label: '录入', hash: '#entry' },
+    { key: 'backup', label: '备份', hash: '#backup' },
   ];
   return (
     <header className="topbar">
@@ -181,11 +198,12 @@ function LeftRail({ groups, route }: { groups: GroupSummary[]; route: Route }) {
 }
 
 function RightRail({
-  route, practiceItem, group,
+  route, practiceItem, group, meta,
 }: {
   route: Route;
   practiceItem: RoundItem | null;
   group: GroupSummary | null;
+  meta: LibraryMeta | null;
 }) {
   if (route.name === 'practice') {
     const schedule = practiceItem?.schedule ?? { stage: 0, dueDate: null };
@@ -228,6 +246,13 @@ function RightRail({
       </aside>
     );
   }
+  if (route.name === 'backup') {
+    return (
+      <aside className="rail-right">
+        <StorageBlock meta={meta} />
+      </aside>
+    );
+  }
   return (
     <aside className="rail-right">
       {route.name === 'import' ? (
@@ -263,13 +288,23 @@ function RightRail({
           ))}
         </div>
       </div>
-      <div className="mb-[26px]">
-        <h2 className="text-t14 font-semibold text-ink-2 mb-[10px]">存储</h2>
-        <p className="text-t12_5 leading-[1.7] text-mute m-0">
-          题库只存在这台设备的浏览器里。记得在「备份」页导出 JSON 文件兜底。
-        </p>
-      </div>
+      <StorageBlock meta={meta} />
     </aside>
+  );
+}
+
+/** The storage explanation and plain-text last-backup line, shared by home and backup. */
+function StorageBlock({ meta }: { meta: LibraryMeta | null }) {
+  return (
+    <div className="mb-[26px]">
+      <h2 className="text-t14 font-semibold text-ink-2 mb-[10px]">存储</h2>
+      <p className="text-t12_5 leading-[1.7] text-mute m-0">
+        浏览器清理存储后题库会消失，定期导出一份 JSON 文件到「文件」app 里。
+      </p>
+      <p className="text-t12_5 leading-[1.7] text-ink-2 m-0 mt-[6px]">
+        {backupRailText(meta)}
+      </p>
+    </div>
   );
 }
 
@@ -277,10 +312,7 @@ function HomeView({ groups, meta }: { groups: GroupSummary[]; meta: LibraryMeta 
   const totalQuestions = groups.reduce((sum, g) => sum + g.questionCount, 0);
   const dueTotal = groups.reduce((sum, g) => sum + g.dueCount, 0);
   const inReview = groups.reduce((sum, g) => sum + g.inReviewCount, 0);
-  const backupText = meta?.lastBackupAt
-    ? `上次备份 ${daysSince(meta.lastBackupAt)} 天前`
-    : '尚未备份';
-  const backupStale = !meta?.lastBackupAt || daysSince(meta.lastBackupAt) >= 7;
+  const badge = backupBadge(meta);
   return (
     <>
       <Breadcrumb trail={['我的题库']} />
@@ -296,8 +328,8 @@ function HomeView({ groups, meta }: { groups: GroupSummary[]; meta: LibraryMeta 
         <span className="pill bg-blue-wash text-blue-ink">
           <b className="num">{inReview}</b> 道在复习中
         </span>
-        <span className={`pill ${backupStale ? 'bg-orange-wash text-[#9C5620]' : 'bg-blue-wash text-blue-ink'}`}>
-          {backupText}
+        <span className={`pill ${badge.stale ? 'bg-orange-wash text-[#9C5620]' : 'bg-blue-wash text-blue-ink'}`}>
+          {badge.text}
         </span>
       </div>
       <hr className="hairline" />
@@ -330,11 +362,6 @@ function HomeView({ groups, meta }: { groups: GroupSummary[]; meta: LibraryMeta 
       </ul>
     </>
   );
-}
-
-function daysSince(iso: string): number {
-  const then = new Date(iso).getTime();
-  return Math.max(0, Math.floor((Date.now() - then) / 86_400_000));
 }
 
 function BrandIcon() {

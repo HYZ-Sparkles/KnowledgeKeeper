@@ -3,6 +3,7 @@ import type {
   LibraryMeta, Question, QuestionInput, QuestionView, Schedule, Attempt,
   RoundItem, SubmittedAnswer, SubmitResult, SubQuestionResult,
   ListQuestionsOptions, ReviewDraft, FileLike, FileImportResult,
+  LibraryCounts,
 } from './types';
 import {
   draftAnswer, matchingDraftAnswer, parseText, trueFalseOptions,
@@ -13,6 +14,9 @@ import { excelTemplate } from './internal/excelTemplate';
 import { grade, gradeMatching } from './internal/grade';
 import { buildRound } from './internal/round';
 import { advance, localDay } from './internal/schedule';
+import {
+  BACKUP_SCHEMA_VERSION, serializeBackup, type BackupSnapshot,
+} from './internal/backup';
 
 export { INTERVALS } from './internal/schedule';
 
@@ -62,6 +66,12 @@ export interface Core {
   startRound(groupId: string): Promise<RoundItem[]>;
   /** Grade one answer, append its attempt and return the observable outcome. */
   submitAnswer(questionId: string, answer: SubmittedAnswer): Promise<SubmitResult>;
+  /** Write the whole library as JSON and stamp 「上次备份」 with the clock. */
+  backup(): Promise<string>;
+  /** Download name, whose day comes from the injected clock. */
+  backupFileName(): string;
+  /** Read-only counts for the backup page pill; never parses a backup. */
+  getLibraryCounts(): Promise<LibraryCounts>;
 }
 
 /**
@@ -400,6 +410,30 @@ export function createCore(deps: CoreDeps): Core {
       for (const record of records) await storage.putAttempt(record);
       if (after !== before) await storage.putSchedule(questionId, after);
       return { questionId, correct, correctAnswer, before, after, subResults };
+    },
+    async backup(): Promise<string> {
+      await ensureInitialized();
+      const [groups, questions, schedules, attempts] = await Promise.all([
+        storage.getGroups(), storage.getQuestions(),
+        storage.getSchedules(), storage.getAttempts(),
+      ]);
+      const meta = { lastBackupAt: clock.now().toISOString() };
+      await storage.putMeta(meta);
+      const snapshot: BackupSnapshot = {
+        schemaVersion: BACKUP_SCHEMA_VERSION,
+        groups, questions, schedules, attempts, meta,
+      };
+      return serializeBackup(snapshot);
+    },
+    backupFileName(): string {
+      return `KnowledgeKeeper-${localDay(clock.now())}.json`;
+    },
+    async getLibraryCounts(): Promise<LibraryCounts> {
+      await ensureInitialized();
+      const [questions, attempts] = await Promise.all([
+        storage.getQuestions(), storage.getAttempts(),
+      ]);
+      return { questions: questions.length, attempts: attempts.length };
     },
   };
 }

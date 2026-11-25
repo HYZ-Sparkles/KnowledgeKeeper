@@ -48,6 +48,12 @@
   .rate i { @apply block h-[3px] w-[52px] flex-none bg-[#EDE7DD]; }
   .rate i b { @apply block h-full bg-amber-fill; }
 
+  /* 备份页：发丝线分隔的段落，每段一件事一个主动作。 */
+  .stack { @apply grid gap-[26px] max-w-[720px]; }
+  .panel { @apply border-t border-rule pt-5; }
+  .panel h2 { @apply m-0 mb-[6px] text-[19px] font-semibold text-ink-2; }
+  .panel p { @apply m-0 mb-[14px] max-w-[58ch] text-t14 leading-[1.75] text-mute; }
+
   /* 分组页排期分布：一根基线与八个刻度，零刻度只留 2px 灰线。 */
   .sched { @apply mb-[2px] mt-[24px] max-w-[640px]; }
   .sched-h {
