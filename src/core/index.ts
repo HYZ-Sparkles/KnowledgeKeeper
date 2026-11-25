@@ -1,9 +1,9 @@
 import type {
   Clock, Random, StorageAdapter, Group, GroupSummary, GroupTypeCounts,
   LibraryMeta, Question, QuestionInput, QuestionView, Schedule, Attempt,
-  RoundItem, SubmittedAnswer, SubmitResult,
+  RoundItem, SubmittedAnswer, SubmitResult, SubQuestionResult,
 } from './types';
-import { grade } from './internal/grade';
+import { grade, gradeMatching } from './internal/grade';
 import { buildRound } from './internal/round';
 import { advance, localDay } from './internal/schedule';
 
@@ -235,25 +235,45 @@ export function createCore(deps: CoreDeps): Core {
       const question = (await storage.getQuestions())
         .find((q) => q.id === questionId);
       if (!question) throw new Error('题目不存在');
-      const correct = grade(question, answer);
       const before = (await storage.getSchedules())[questionId]
         ?? { stage: 0, dueDate: null };
-      const after = advance(before, correct, clock.now());
-      await storage.putAttempt({
-        id: generateId(random, 'a'),
-        questionId,
-        subIndex: null,
-        correct,
-        at: clock.now().toISOString(),
-      });
+      const now = clock.now();
+      const at = now.toISOString();
+      let correct: boolean;
+      let correctAnswer: string[] = [];
+      let subResults: SubQuestionResult[] | undefined;
+
+      if (question.type === 'matching') {
+        if (!Array.isArray(answer) || !Array.isArray(answer[0])) {
+          throw new Error('匹配题答案格式不正确');
+        }
+        const perSub = answer as string[][];
+        if (perSub.length !== (question.subQuestions?.length ?? 0)) {
+          throw new Error('匹配题答案数量与子题数不符');
+        }
+        const graded = gradeMatching(question, perSub);
+        correct = graded.correct;
+        subResults = graded.subResults;
+      } else {
+        if (Array.isArray(answer[0])) throw new Error('答案格式不正确');
+        correct = grade(question, answer as string[]);
+        correctAnswer = [...question.answer];
+      }
+
+      const after = advance(before, correct, now);
+      // Matching records one attempt per sub-question but schedules once.
+      const records: Attempt[] = subResults
+        ? subResults.map((sub) => ({
+          id: generateId(random, 'a'), questionId,
+          subIndex: sub.subIndex, correct: sub.correct, at,
+        }))
+        : [{
+          id: generateId(random, 'a'), questionId,
+          subIndex: null, correct, at,
+        }];
+      for (const record of records) await storage.putAttempt(record);
       if (after !== before) await storage.putSchedule(questionId, after);
-      return {
-        questionId,
-        correct,
-        correctAnswer: [...question.answer],
-        before,
-        after,
-      };
+      return { questionId, correct, correctAnswer, before, after, subResults };
     },
   };
 }

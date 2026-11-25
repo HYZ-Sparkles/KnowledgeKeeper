@@ -36,7 +36,7 @@ export default function GroupView({
   const [deleting, setDeleting] = useState(false);
   const summary = groups.find((g) => g.group.id === groupId);
   const name = summary?.group.name ?? '分组';
-  const practiceCount = questions?.filter((q) => q.type !== 'matching').length ?? 0;
+  const practiceCount = questions?.length ?? 0;
   const questionCount = summary?.questionCount ?? 0;
   const dueInGroup = summary?.dueCount ?? 0;
   const today = localDayString(new Date());

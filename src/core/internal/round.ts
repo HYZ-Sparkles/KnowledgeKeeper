@@ -13,8 +13,8 @@ export function shuffle<T>(items: readonly T[], random: Random): T[] {
 
 /**
  * Build one round: due questions first, oldest due date first, then every
- * remaining practicable question shuffled. Matching questions stay out until
- * their own grading ticket adds them.
+ * remaining question shuffled. Matching questions are ordinary round items
+ * and use the whole question's schedule.
  */
 export function buildRound(
   questions: readonly Question[],
@@ -22,14 +22,13 @@ export function buildRound(
   random: Random,
   now: Date,
 ): Question[] {
-  const practicable = questions.filter((question) => question.type !== 'matching');
   const today = localDay(now);
-  const due = practicable
+  const due = questions
     .filter((question) => isDue(schedules[question.id], today))
     .sort((a, b) => (schedules[a.id].dueDate ?? '')
       .localeCompare(schedules[b.id].dueDate ?? ''));
   const rest = shuffle(
-    practicable.filter((question) => !isDue(schedules[question.id], today)),
+    questions.filter((question) => !isDue(schedules[question.id], today)),
     random,
   );
   return [...due, ...rest];

@@ -31,6 +31,7 @@ export default function PracticeView({
   const [items, setItems] = useState<RoundItem[] | null>(null);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<string[]>([]);
+  const [subPicked, setSubPicked] = useState<string[][]>([]);
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [finished, setFinished] = useState(false);
@@ -43,6 +44,7 @@ export default function PracticeView({
     setItems(null);
     setIndex(0);
     setPicked([]);
+    setSubPicked([]);
     setResult(null);
     setFinished(false);
     setTally({ correct: 0, wrong: 0 });
@@ -75,13 +77,37 @@ export default function PracticeView({
     }
   }
 
+  function toggleSub(subIndex: number, type: 'single' | 'multiple', letter: string) {
+    if (result) return;
+    setSubPicked((prev) => {
+      const current = prev[subIndex] ?? [];
+      const chosen = type === 'multiple'
+        ? (current.includes(letter)
+          ? current.filter((value) => value !== letter)
+          : [...current, letter].sort())
+        : (current[0] === letter ? [] : [letter]);
+      const next = [...prev];
+      next[subIndex] = chosen;
+      return next;
+    });
+  }
+
   async function submit() {
     const item = items?.[index];
-    if (!item || result || picked.length === 0) return;
+    if (!item || result || submitting) return;
+    const subs = item.type === 'matching' ? (item.subQuestions ?? []) : [];
+    if (item.type === 'matching') {
+      if (subs.some((_, position) => (subPicked[position]?.length ?? 0) === 0)) {
+        return;
+      }
+    } else if (picked.length === 0) return;
+    const answer = item.type === 'matching'
+      ? subs.map((_, position) => subPicked[position] ?? [])
+      : picked;
     const wasDue = scheduleIsDue(item.schedule, localDayString(new Date()));
     setSubmitting(true);
     try {
-      const outcome = await core.submitAnswer(item.id, picked);
+      const outcome = await core.submitAnswer(item.id, answer);
       setResult(outcome);
       if (wasDue) setDueLeft((count) => Math.max(0, count - 1));
       setTally((prev) => ({
@@ -105,6 +131,7 @@ export default function PracticeView({
     if (items && index + 1 < items.length) {
       setIndex(index + 1);
       setPicked([]);
+      setSubPicked([]);
       setResult(null);
     } else {
       setFinished(true);
@@ -115,9 +142,28 @@ export default function PracticeView({
 
   useEffect(() => { onItemChange(item ?? null); }, [item, onItemChange]);
 
-  const hint = picked.length > 0
-    ? `已选 ${formatLetters(picked)}`
-    : item?.type === 'multiple' ? '可多选，全对才算对' : '选一个再提交';
+  const subs = item?.type === 'matching' ? (item.subQuestions ?? []) : [];
+  const unanswered = subs.filter(
+    (_, position) => (subPicked[position]?.length ?? 0) === 0,
+  ).length;
+  const canSubmit = item?.type === 'matching'
+    ? subs.length > 0 && unanswered === 0
+    : picked.length > 0;
+  const hint = item?.type === 'matching'
+    ? unanswered === subs.length
+      ? `${subs.length} 个子题共用一组选项，全选完再提交`
+      : unanswered > 0
+        ? `还有 ${unanswered} 个子题没选`
+        : '全部子题已选，可以提交'
+    : picked.length > 0
+      ? `已选 ${formatLetters(picked)}`
+      : item?.type === 'multiple' ? '可多选，全对才算对' : '选一个再提交';
+  const wrongSubs = (result?.subResults ?? [])
+    .map((sub, position) => ({ sub, position }))
+    .filter(({ sub }) => !sub.correct);
+  const wrongMulti = wrongSubs.some(
+    ({ position }) => subs[position]?.type === 'multiple',
+  );
 
   return (
     <>
@@ -166,44 +212,113 @@ export default function PracticeView({
             </span>
           </div>
           <h2 className="qstem">{item.stem}</h2>
-          <ul className="opts">
-            {item.options.map((option) => {
-              const isAnswer = result?.correctAnswer.includes(option.letter) ?? false;
-              const isMistake = !!result
-                && picked.includes(option.letter) && !isAnswer;
-              const classes = ['opt'];
-              if (result) {
-                if (isAnswer) classes.push('right');
-                if (isMistake) classes.push('wrong');
-              } else if (picked.includes(option.letter)) {
-                classes.push('sel');
-              }
-              return (
-                <li key={option.letter}>
-                  <button className={classes.join(' ')} type="button"
-                    disabled={!!result}
-                    onClick={() => toggle(option.letter)}>
-                    <span className="lt">{option.letter}</span>
-                    <span className="tx">{option.text}</span>
-                    {isAnswer && <span className="tick">正确答案</span>}
-                    {isMistake && <span className="tick bad">你的选择</span>}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+          {item.type === 'matching' ? (
+            <div className="match">
+              <div className="shared">
+                <h3>共用选项</h3>
+                <ol>
+                  {item.sharedOptions?.map((option) => (
+                    <li key={option.letter}>
+                      <b>{option.letter}</b>
+                      <span>{option.text}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+              <ul className="subs">
+                {subs.map((sub, position) => {
+                  const verdict = result?.subResults?.[position];
+                  const chosen = subPicked[position] ?? [];
+                  return (
+                    <li className="sub" key={position}>
+                      <div className="sub-q">
+                        <i className="num">{position + 1}</i>
+                        <span>{sub.stem}</span>
+                        <span className="qtype">
+                          {sub.type === 'multiple' ? '多选' : '单选'}
+                        </span>
+                      </div>
+                      <div className="sub-opts">
+                        {item.sharedOptions?.map((option) => {
+                          const isAnswer = verdict?.correctAnswer.includes(option.letter)
+                            ?? false;
+                          const isMistake = !!verdict
+                            && verdict.submitted.includes(option.letter)
+                            && !isAnswer;
+                          const classes = ['chip'];
+                          if (verdict) {
+                            if (isAnswer) classes.push('right');
+                            if (isMistake) classes.push('wrong');
+                          } else if (chosen.includes(option.letter)) {
+                            classes.push('sel');
+                          }
+                          return (
+                            <button
+                              className={classes.join(' ')}
+                              type="button"
+                              key={option.letter}
+                              disabled={!!result}
+                              onClick={() => toggleSub(
+                                position, sub.type, option.letter,
+                              )}
+                            >
+                              {option.letter}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : (
+            <ul className="opts">
+              {item.options.map((option) => {
+                const isAnswer = result?.correctAnswer.includes(option.letter) ?? false;
+                const isMistake = !!result
+                  && picked.includes(option.letter) && !isAnswer;
+                const classes = ['opt'];
+                if (result) {
+                  if (isAnswer) classes.push('right');
+                  if (isMistake) classes.push('wrong');
+                } else if (picked.includes(option.letter)) {
+                  classes.push('sel');
+                }
+                return (
+                  <li key={option.letter}>
+                    <button className={classes.join(' ')} type="button"
+                      disabled={!!result}
+                      onClick={() => toggle(option.letter)}>
+                      <span className="lt">{option.letter}</span>
+                      <span className="tx">{option.text}</span>
+                      {isAnswer && <span className="tick">正确答案</span>}
+                      {isMistake && <span className="tick bad">你的选择</span>}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
           {result ? (
             <div className={`feedback ${result.correct ? '' : 'bad'}`}>
               <div className="fb-head">{result.correct ? '答对' : '答错'}</div>
               <div className="fb-body">
-                {result.correct ? (
+                {item.type === 'matching' ? (
+                  result.correct ? (
+                    <>全部子题都答对了。</>
+                  ) : (
+                    <>第 {wrongSubs.map(({ position }) => position + 1).join('、')}{' '}
+                      个子题错了，整道题算答错</>
+                  )
+                ) : result.correct ? (
                   <>正确答案 <b>{formatLetters(result.correctAnswer)}</b></>
                 ) : (
                   <>你选的是 <b>{formatLetters(picked)}</b>，正确答案{' '}
                     <b>{formatLetters(result.correctAnswer)}</b></>
                 )}
                 <div className="mt-[4px]">{scheduleConsequence(result)}</div>
-                {!result.correct && item.type === 'multiple' && (
+                {!result.correct && (item.type === 'multiple' || wrongMulti) && (
                   <div>漏选也算错。</div>
                 )}
               </div>
@@ -218,7 +333,7 @@ export default function PracticeView({
           ) : (
             <div className="submit-row">
               <button className="btn btn-primary" type="button"
-                disabled={picked.length === 0 || submitting}
+                disabled={!canSubmit || submitting}
                 onClick={() => void submit()}>提交</button>
               <span className="hintline">{hint}</span>
             </div>

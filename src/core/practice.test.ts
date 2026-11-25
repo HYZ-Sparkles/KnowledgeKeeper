@@ -64,7 +64,7 @@ const matchingQuestion: QuestionInput = {
 };
 
 describe('应用核心 · 练习轮构建', () => {
-  it('一轮含全部可练习题，按注入随机排序，匹配题不进轮', async () => {
+  it('一轮含全部题目，匹配题也按注入随机排序进轮', async () => {
     const { core } = setup();
     const [group] = await core.listGroups();
     const first = await core.createQuestion(
@@ -72,16 +72,16 @@ describe('应用核心 · 练习轮构建', () => {
     );
     const second = await core.createQuestion(multipleQuestion, group.group.id);
     const third = await core.createQuestion(trueFalseQuestion, group.group.id);
-    await core.createQuestion(matchingQuestion, group.group.id);
+    const fourth = await core.createQuestion(matchingQuestion, group.group.id);
 
     const round = await core.startRound(group.group.id);
 
-    // fixedRandom(1)：建组与四道题消耗 10 次取样，余下取样令 3 项洗牌为 [1,2,0]。
+    // fixedRandom(1)：建组与四道题消耗 10 次取样，余下取样令 4 项洗牌。
     expect(round.map((item) => item.id)).toEqual([
-      second.id, third.id, first.id,
+      first.id, third.id, fourth.id, second.id,
     ]);
-    expect(round).toHaveLength(3);
-    expect(round.some((item) => item.type === 'matching')).toBe(false);
+    expect(round).toHaveLength(4);
+    expect(round.some((item) => item.type === 'matching')).toBe(true);
   });
 
   it('下一轮重新打乱；轮项自带完整内容、排期、对错次数与收藏', async () => {

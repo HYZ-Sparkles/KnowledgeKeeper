@@ -137,6 +137,39 @@
   }
   .fb-exp b { @apply font-semibold text-ink-2; }
   .fb-next { @apply mt-[14px]; }
+
+  /* 匹配题：内嵌纸底共用选项面板，子题用 44px 字母 chip 作答。 */
+  .match {
+    @apply grid gap-[34px] mt-[22px] max-w-[900px];
+    grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+  }
+  .shared { @apply self-start border border-rule bg-paper-2 px-4 py-[14px]; }
+  .shared h3 {
+    @apply m-0 mb-[10px] text-[13px] font-semibold tracking-[.4px] text-mute;
+  }
+  .shared ol { @apply list-none m-0 p-0 text-t14 leading-[1.9]; }
+  .shared li { @apply flex gap-2; }
+  .shared li b { @apply flex-none font-semibold text-amber; }
+  .subs { @apply list-none m-0 p-0; }
+  .sub { @apply py-3 border-t border-rule; }
+  .subs li:last-child { @apply border-b; }
+  .sub-q {
+    @apply flex items-baseline gap-[10px] mb-[9px] text-[15.5px] leading-[1.5];
+  }
+  .sub-q i { @apply w-4 flex-none not-italic text-[13px] text-faint; }
+  .sub-opts { @apply flex flex-wrap gap-[6px] pl-[26px]; }
+  .chip {
+    @apply inline-flex min-w-[44px] h-[44px] px-3 items-center justify-center
+           border border-rule rounded-3 text-[13.5px] text-ink;
+  }
+  .chip:not(:disabled):hover { @apply border-amber; }
+  .chip.sel { @apply bg-blue border-blue text-white; }
+  .chip.right { @apply border-green text-green bg-green-wash; }
+  .chip.wrong {
+    @apply border-red text-red bg-[#FDF1EE] line-through;
+  }
+  .chip:disabled { @apply cursor-default opacity-[.85]; }
+
   .rr-scale { @apply flex gap-[3px] mt-[10px] mb-[8px]; }
   .rr-scale i {
     content: ''; @apply flex-1 h-1 rounded-[1px] bg-[#E6E0D7];
@@ -206,6 +239,7 @@
 }
 @media (max-width: 760px) {
   .two { grid-template-columns: 1fr; }
+  .match { grid-template-columns: minmax(0, 1fr); }
   .shell { grid-template-columns: minmax(0, 1fr); }
   .rail-left { display: none; }
   .topbar-right { display: none; }

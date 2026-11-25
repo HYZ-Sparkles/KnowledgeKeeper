@@ -58,16 +58,27 @@ export interface QuestionView extends Question {
 /** One queue item: full question content, schedule, stats and favorite are all present. */
 export type RoundItem = QuestionView;
 
-/** Letters picked by the user; matching questions send one array per sub-question. */
-export type SubmittedAnswer = string[];
+/** Letters picked by the user; matching sends one array per sub-question. */
+export type SubmittedAnswer = string[] | string[][];
+
+/** One sub-question's verdict; correct answers live here for matching. */
+export interface SubQuestionResult {
+  subIndex: number;
+  correct: boolean;
+  submitted: string[];
+  correctAnswer: string[];
+}
 
 /** The observable outcome of one submission; UI renders both schedule states. */
 export interface SubmitResult {
   questionId: string;
   correct: boolean;
+  /** Flat answer key; matching leaves this empty and uses subResults. */
   correctAnswer: string[];
   before: Schedule;
   after: Schedule;
+  /** Present only for matching; one entry per sub-question, in order. */
+  subResults?: SubQuestionResult[];
 }
 
 export interface Group {
