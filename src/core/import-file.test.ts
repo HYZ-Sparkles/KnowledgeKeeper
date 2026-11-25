@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import * as XLSX from 'xlsx';
 import { describe, it, expect } from 'vitest';
 import { createCore } from './index';
 import { fixedClock, fixedRandom, memoryAdapter } from './helpers';
@@ -25,6 +26,19 @@ function fixtureFile(name: string, fixture: string): FileLike {
         bytes.byteOffset, bytes.byteOffset + bytes.byteLength,
       ) as ArrayBuffer;
     },
+  };
+}
+
+/** Build a fixed-column workbook in memory, like the runtime template does. */
+function workbookFile(name: string, rows: string[][]): FileLike {
+  const sheet = XLSX.utils.aoa_to_sheet(rows);
+  const book = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(book, sheet, '题目');
+  const bytes = XLSX.write(book, { bookType: 'xlsx', type: 'array' });
+  return {
+    name,
+    type: '',
+    async arrayBuffer() { return bytes as ArrayBuffer; },
   };
 }
 
@@ -83,9 +97,17 @@ describe('应用核心 · 文件导入（PDF / Word）', () => {
 describe('应用核心 · Excel 导入', () => {
   it('固定列工作簿直接生成草稿，跳过文本框且与文本导入警示一致', async () => {
     const core = setup();
-    const result = await core.importFromFile(
-      fixtureFile('模板.xlsx', 'template.xlsx'),
-    );
+    const result = await core.importFromFile(workbookFile('模板.xlsx', [
+      ['题型', '题干', 'A', 'B', 'C', 'D', 'E', 'F', '答案', '解析'],
+      [
+        '单选题', 'Excel_LITERAL_KEEP question', 'yes', 'no',
+        '', '', '', '', 'A', 'because',
+      ],
+      [
+        '多选题', 'Excel_MULTIPLE question', '甲', '乙',
+        '丙', '', '', '', 'AC', '',
+      ],
+    ]));
 
     expect(result.skipTextarea).toBe(true);
     expect(result.text).toBe('');
