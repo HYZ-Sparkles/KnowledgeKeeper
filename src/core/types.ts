@@ -34,6 +34,22 @@ export interface Question {
   subQuestions: SubQuestion[] | null;
 }
 
+/** Editable fields supplied by the UI when creating or editing a question. */
+export interface QuestionInput {
+  type: QuestionType;
+  stem: string;
+  options: Option[];
+  answer: string[];
+  explanation: string;
+}
+
+/** A question with its derived state; no practice has happened yet for new questions. */
+export interface QuestionView extends Question {
+  schedule: Schedule;
+  correctCount: number;
+  wrongCount: number;
+}
+
 export interface Group {
   id: string;
   name: string;

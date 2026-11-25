@@ -1,21 +1,22 @@
 import { useCallback, useEffect, useState } from 'react';
-import { createCore, type Core } from './core';
-import { indexedDbAdapter } from './core/indexeddb-adapter';
+import type { Core } from './core';
 import type { GroupSummary, LibraryMeta } from './core/types';
 import { currentRoute, navigate, type Route } from './router';
+import Breadcrumb from './ui/Breadcrumb';
+import EntryView from './ui/EntryView';
+import GroupView from './ui/GroupView';
+import Toast from './ui/Toast';
 
-// The core is the only module the UI calls. Dependencies are supplied here,
-// at the composition root, never created inside the core.
-const core: Core = createCore({
-  storage: indexedDbAdapter(),
-  clock: { now: () => new Date() },
-  random: { next: () => Math.random() },
-});
-
-export default function App() {
+export default function App({ core }: { core: Core }) {
   const [route, setRoute] = useState<Route>(currentRoute);
   const [groups, setGroups] = useState<GroupSummary[] | null>(null);
   const [meta, setMeta] = useState<LibraryMeta | null>(null);
+  const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
+
+  const showToast = useCallback((text: string) => {
+    setToast((prev) => ({ id: (prev?.id ?? 0) + 1, text }));
+  }, []);
+  const closeToast = useCallback(() => setToast(null), []);
 
   useEffect(() => {
     const onHash = () => setRoute(currentRoute());
@@ -44,27 +45,37 @@ export default function App() {
 
   return (
     <>
-      <Topbar active="library" today={today} />
+      <Topbar
+        active={effectiveRoute.name === 'entry' ? 'entry' : 'library'}
+        today={today}
+      />
       <div className="shell">
         <LeftRail groups={groups ?? []} route={effectiveRoute} />
         <main className="content">
           {effectiveRoute.name === 'home' ? (
             <HomeView groups={groups ?? []} meta={meta} />
+          ) : effectiveRoute.name === 'entry' ? (
+            <EntryView core={core} groups={groups ?? []} showToast={showToast} />
           ) : (
             <GroupView
+              core={core}
               groupId={effectiveRoute.groupId}
               groups={groups ?? []}
             />
           )}
         </main>
-        <RightRail />
+        <RightRail route={effectiveRoute} />
       </div>
+      <Toast key={toast?.id ?? 0} message={toast?.text ?? null} onClose={closeToast} />
     </>
   );
 }
 
 function Topbar({ active, today }: { active: string; today: string }) {
-  const nav = [{ key: 'library', label: '题库', hash: '#home' }];
+  const nav = [
+    { key: 'library', label: '题库', hash: '#home' },
+    { key: 'entry', label: '录入', hash: '#entry' },
+  ];
   return (
     <header className="topbar">
       <button className="brand" onClick={() => navigate({ name: 'home' })}>
@@ -118,9 +129,18 @@ function LeftRail({ groups, route }: { groups: GroupSummary[]; route: Route }) {
   );
 }
 
-function RightRail() {
+function RightRail({ route }: { route: Route }) {
   return (
     <aside className="rail-right">
+      {route.name === 'entry' ? (
+        <div className="mb-[26px]">
+          <h2 className="text-t14 font-semibold text-ink-2 mb-[10px]">录入</h2>
+          <p className="text-t12_5 leading-[1.7] text-mute m-0">
+            一份表单反复用：题型决定要填什么，解析可以不填。
+            保存后留在表单，连续录入不用刷新。
+          </p>
+        </div>
+      ) : null}
       <div className="mb-[26px]">
         <h2 className="text-t14 font-semibold text-ink-2 mb-[10px]">排期</h2>
         <p className="text-t12_5 leading-[1.7] text-mute m-0">
@@ -188,37 +208,6 @@ function HomeView({ groups, meta }: { groups: GroupSummary[]; meta: LibraryMeta 
         ))}
       </ul>
     </>
-  );
-}
-
-function GroupView({ groupId, groups }: { groupId: string; groups: GroupSummary[] }) {
-  const summary = groups.find((g) => g.group.id === groupId);
-  const name = summary?.group.name ?? '分组';
-  return (
-    <>
-      <Breadcrumb trail={['我的题库', name]} />
-      <h1 className="text-t40 font-bold text-ink-2 mb-3 tracking-[-.3px]">{name}</h1>
-      <p className="text-t15 text-mute mb-[18px] max-w-[62ch]">
-        {summary?.questionCount ?? 0} 道题，
-        总体正确率 {summary?.correctRate == null ? '—' : `${Math.round(summary.correctRate * 100)}%`}，
-        今天到期 {summary?.dueCount ?? 0} 道。到期题排在最前面，最久到期的先出。
-      </p>
-      <hr className="hairline" />
-      <p className="text-t14 text-faint">这一组还没有题。</p>
-    </>
-  );
-}
-
-function Breadcrumb({ trail }: { trail: string[] }) {
-  return (
-    <div className="text-t14 text-amber mb-[18px]">
-      {trail.map((part, i) => (
-        <span key={i}>
-          {i > 0 && <span className="text-faint mx-2">/</span>}
-          {part}
-        </span>
-      ))}
-    </div>
   );
 }
 

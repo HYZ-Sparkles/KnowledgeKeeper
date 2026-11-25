@@ -1,5 +1,6 @@
 import type {
   Clock, Random, StorageAdapter, Group, GroupSummary, LibraryMeta,
+  Question, QuestionInput, QuestionView, Schedule, Attempt,
 } from './types';
 
 export interface CoreDeps {
@@ -18,6 +19,9 @@ function generateId(random: Random, prefix: string): string {
 export interface Core {
   listGroups(): Promise<GroupSummary[]>;
   getMeta(): Promise<LibraryMeta>;
+  createQuestion(input: QuestionInput, groupId: string): Promise<QuestionView>;
+  listQuestions(groupId: string): Promise<QuestionView[]>;
+  getQuestion(questionId: string): Promise<QuestionView>;
 }
 
 /**
@@ -86,6 +90,67 @@ export function createCore(deps: CoreDeps): Core {
       await ensureInitialized();
       return storage.getMeta();
     },
+    async createQuestion(input: QuestionInput, groupId: string): Promise<QuestionView> {
+      await ensureInitialized();
+      const groups = await storage.getGroups();
+      if (!groups.some((g) => g.id === groupId)) {
+        throw new Error('分组不存在');
+      }
+      const questions = await storage.getQuestions();
+      const question: Question = {
+        id: generateId(random, 'q'),
+        groupId,
+        type: input.type,
+        stem: input.stem,
+        options: input.options.map((option) => ({ ...option })),
+        answer: [...input.answer],
+        explanation: input.explanation,
+        favorite: false,
+        importOrder: questions.reduce(
+          (max, q) => Math.max(max, q.importOrder), 0) + 1,
+        sharedOptions: null,
+        subQuestions: null,
+      };
+      await storage.putQuestion(question);
+      return toQuestionView(question, {}, []);
+    },
+    async listQuestions(groupId: string): Promise<QuestionView[]> {
+      await ensureInitialized();
+      const [questions, schedules, attempts] = await Promise.all([
+        storage.getQuestions(),
+        storage.getSchedules(),
+        storage.getAttempts(),
+      ]);
+      return questions
+        .filter((q) => q.groupId === groupId)
+        .sort((a, b) => a.importOrder - b.importOrder)
+        .map((q) => toQuestionView(q, schedules, attempts));
+    },
+    async getQuestion(questionId: string): Promise<QuestionView> {
+      await ensureInitialized();
+      const [question, schedules, attempts] = await Promise.all([
+        storage.getQuestions(),
+        storage.getSchedules(),
+        storage.getAttempts(),
+      ]);
+      const found = question.find((q) => q.id === questionId);
+      if (!found) throw new Error('题目不存在');
+      return toQuestionView(found, schedules, attempts);
+    },
+  };
+}
+
+function toQuestionView(
+  question: Question,
+  schedules: Record<string, Schedule>,
+  attempts: Attempt[],
+): QuestionView {
+  const own = attempts.filter((a) => a.questionId === question.id);
+  return {
+    ...question,
+    schedule: schedules[question.id] ?? { stage: 0, dueDate: null },
+    correctCount: own.filter((a) => a.correct).length,
+    wrongCount: own.filter((a) => !a.correct).length,
   };
 }
 

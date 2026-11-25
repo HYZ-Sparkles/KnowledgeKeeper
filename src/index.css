@@ -44,6 +44,44 @@
     @apply inline-flex items-center gap-[6px] h-[26px] px-[11px]
            rounded-[13px] text-t12_5;
   }
+  .btn {
+    @apply inline-flex items-center justify-center gap-[7px] h-tap px-[18px]
+           rounded-4 border border-rule bg-paper text-[14.5px] text-ink;
+  }
+  .btn-primary { @apply bg-blue border-blue text-white font-medium; }
+  .btn-primary:disabled { @apply bg-[#C9D4E8] border-[#C9D4E8] text-white; }
+  .btn-ghost { @apply border-transparent text-amber px-[6px]; }
+  .btn-danger { @apply text-red; }
+  .form-grid { @apply grid gap-[14px] max-w-[700px] mt-1; }
+  .two { @apply grid grid-cols-2 gap-4; }
+  .field { @apply grid gap-[6px] text-[13px] text-mute; }
+  .field-input {
+    @apply h-tap px-3 rounded-3 border border-rule bg-white text-[14.5px]
+           text-ink focus:border-blue focus:outline focus:outline-2
+           focus:outline-blue-wash;
+  }
+  textarea.field-input {
+    @apply h-auto py-[10px] leading-[1.65] resize-y;
+  }
+  .opt-row { @apply flex items-center gap-[10px] mb-[7px] min-h-[56px]; }
+  .opt-letter { @apply w-5 text-t14 text-mute font-semibold flex-none; }
+  .opt-pick {
+    @apply w-10 h-10 rounded-3 border border-rule grid place-items-center
+           text-[12px] text-mute flex-none;
+  }
+  .opt-pick.on { @apply bg-blue border-blue text-white; }
+  .opt-remove { @apply text-t12_5 text-faint px-2 flex-none; }
+  .qtype {
+    @apply inline-flex items-center h-[19px] px-[5px] rounded-3 border
+           border-rule text-[12px] text-mute flex-none;
+  }
+  .form-missing { @apply text-[13px] text-orange m-0; }
+  .toast {
+    @apply fixed left-1/2 bottom-7 -translate-x-1/2 translate-y-[14px]
+           bg-ink text-paper text-t13_5 px-[18px] py-[11px] rounded-4
+           opacity-0 pointer-events-none transition-all duration-200 z-[60];
+  }
+  .toast.on { @apply opacity-100 translate-y-0; }
 }
 
 /* Breakpoints per spec「壳」: ≤1180 narrow, ≤960 no right rail, ≤760 single column. */
@@ -56,6 +94,7 @@
   .rail-right { display: none; }
 }
 @media (max-width: 760px) {
+  .two { grid-template-columns: 1fr; }
   .shell { grid-template-columns: minmax(0, 1fr); }
   .rail-left { display: none; }
   .topbar-right { display: none; }
