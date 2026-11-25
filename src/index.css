@@ -82,6 +82,29 @@
   .btn-small { @apply h-[34px] px-[13px] text-t13_5; }
   .grow { @apply flex-1; }
 
+  /* 收藏按钮与分组页开关：文字加图标，触摸目标 40px。 */
+  .favbtn {
+    @apply -my-[8px] ml-auto inline-flex h-10 items-center gap-[6px] px-3
+           border border-rule rounded-3 text-[13px] text-mute flex-none;
+  }
+  .favbtn:hover { @apply border-orange-fill text-orange; }
+  .favbtn.on { @apply border-[#E6C6AC] bg-[#FBF1E6] text-orange; }
+  .favbtn.on svg { fill: currentColor; }
+  .switch { @apply inline-flex items-center gap-[7px] text-[13.5px] text-mute; }
+  .switch i {
+    @apply relative w-8 h-[18px] rounded-[9px] bg-[#DED8CF] flex-none;
+    transition: background .15s;
+  }
+  .switch i::after {
+    content: '';
+    @apply absolute top-[2px] left-[2px] w-[14px] h-[14px]
+           rounded-full bg-white;
+    transition: transform .15s;
+  }
+  .switch.on { @apply text-ink-2; }
+  .switch.on i { @apply bg-blue; }
+  .switch.on i::after { transform: translateX(14px); }
+
   /* 练习页：发丝线分隔的整宽选项行与纸底反馈块。 */
   .practice-head {
     @apply flex items-center gap-[12px] mb-[20px] text-[13px] text-mute;

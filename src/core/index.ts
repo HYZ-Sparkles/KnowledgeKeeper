@@ -2,6 +2,7 @@ import type {
   Clock, Random, StorageAdapter, Group, GroupSummary, GroupTypeCounts,
   LibraryMeta, Question, QuestionInput, QuestionView, Schedule, Attempt,
   RoundItem, SubmittedAnswer, SubmitResult, SubQuestionResult,
+  ListQuestionsOptions,
 } from './types';
 import { grade, gradeMatching } from './internal/grade';
 import { buildRound } from './internal/round';
@@ -26,8 +27,12 @@ export interface Core {
   listGroups(): Promise<GroupSummary[]>;
   getMeta(): Promise<LibraryMeta>;
   createQuestion(input: QuestionInput, groupId: string): Promise<QuestionView>;
-  listQuestions(groupId: string): Promise<QuestionView[]>;
+  listQuestions(
+    groupId: string, options?: ListQuestionsOptions,
+  ): Promise<QuestionView[]>;
   getQuestion(questionId: string): Promise<QuestionView>;
+  /** A pure marker: schedule, round and attempts are untouched. */
+  setFavorite(questionId: string, favorite: boolean): Promise<QuestionView>;
   /** Rewrites only editable content; schedule, attempts and favorite stay put. */
   updateQuestion(questionId: string, input: QuestionInput): Promise<QuestionView>;
   /** Removes the question and cascades its attempts and schedule. */
@@ -171,7 +176,9 @@ export function createCore(deps: CoreDeps): Core {
       await storage.putQuestion(question);
       return toQuestionView(question, {}, []);
     },
-    async listQuestions(groupId: string): Promise<QuestionView[]> {
+    async listQuestions(
+      groupId: string, options: ListQuestionsOptions = {},
+    ): Promise<QuestionView[]> {
       await ensureInitialized();
       const [questions, schedules, attempts] = await Promise.all([
         storage.getQuestions(),
@@ -179,9 +186,24 @@ export function createCore(deps: CoreDeps): Core {
         storage.getAttempts(),
       ]);
       return questions
-        .filter((q) => q.groupId === groupId)
+        .filter((q) => q.groupId === groupId
+          && (!options.favoriteOnly || q.favorite))
         .sort((a, b) => a.importOrder - b.importOrder)
         .map((q) => toQuestionView(q, schedules, attempts));
+    },
+    async setFavorite(
+      questionId: string, favorite: boolean,
+    ): Promise<QuestionView> {
+      await ensureInitialized();
+      const found = (await storage.getQuestions())
+        .find((q) => q.id === questionId);
+      if (!found) throw new Error('题目不存在');
+      const updated: Question = { ...found, favorite };
+      await storage.putQuestion(updated);
+      const [schedules, attempts] = await Promise.all([
+        storage.getSchedules(), storage.getAttempts(),
+      ]);
+      return toQuestionView(updated, schedules, attempts);
     },
     async getQuestion(questionId: string): Promise<QuestionView> {
       await ensureInitialized();

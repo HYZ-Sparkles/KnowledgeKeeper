@@ -20,13 +20,14 @@ function formatLetters(letters: readonly string[]): string {
 
 /** One practice round; the core owns ordering, grading and scheduling. */
 export default function PracticeView({
-  core, groupId, groups, refreshGroups, onItemChange,
+  core, groupId, groups, refreshGroups, onItemChange, showToast,
 }: {
   core: Core;
   groupId: string;
   groups: GroupSummary[];
   refreshGroups: () => Promise<void>;
   onItemChange: (item: RoundItem | null) => void;
+  showToast: (message: string) => void;
 }) {
   const [items, setItems] = useState<RoundItem[] | null>(null);
   const [index, setIndex] = useState(0);
@@ -126,6 +127,17 @@ export default function PracticeView({
     }
   }
 
+  async function toggleFavorite() {
+    const item = items?.[index];
+    if (!item) return;
+    const updated = await core.setFavorite(item.id, !item.favorite);
+    setItems((prev) => prev?.map((roundItem, position) =>
+      position === index
+        ? { ...roundItem, favorite: updated.favorite }
+        : roundItem) ?? null);
+    showToast(updated.favorite ? '已收藏' : '已取消收藏');
+  }
+
   function next() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (items && index + 1 < items.length) {
@@ -210,6 +222,15 @@ export default function PracticeView({
                 localDayString(new Date()),
               )}
             </span>
+            <button
+              className={`favbtn ${item.favorite ? 'on' : ''}`}
+              type="button"
+              aria-pressed={item.favorite}
+              onClick={() => void toggleFavorite()}
+            >
+              <StarIcon filled={item.favorite} />
+              <span>{item.favorite ? '已收藏' : '收藏'}</span>
+            </button>
           </div>
           <h2 className="qstem">{item.stem}</h2>
           {item.type === 'matching' ? (
@@ -341,5 +362,17 @@ export default function PracticeView({
         </>
       ) : null}
     </>
+  );
+}
+
+function StarIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg
+      width="15" height="15" viewBox="0 0 24 24"
+      fill={filled ? 'currentColor' : 'none'}
+      stroke="currentColor" strokeWidth="1.4" aria-hidden="true"
+    >
+      <path d="M12 3.6 14.7 9l6 .9-4.35 4.2 1.03 5.97L12 17l-5.38 3.07 1.03-5.97L3.3 9.9l6-.9L12 3.6Z" />
+    </svg>
   );
 }

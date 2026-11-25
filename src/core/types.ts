@@ -55,6 +55,11 @@ export interface QuestionView extends Question {
   wrongCount: number;
 }
 
+/** The group toolbar's 「只看收藏」 switch is a seam-level filter. */
+export interface ListQuestionsOptions {
+  favoriteOnly?: boolean;
+}
+
 /** One queue item: full question content, schedule, stats and favorite are all present. */
 export type RoundItem = QuestionView;
 

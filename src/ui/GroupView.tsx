@@ -31,6 +31,7 @@ export default function GroupView({
   showToast: (message: string) => void;
 }) {
   const [questions, setQuestions] = useState<QuestionView[] | null>(null);
+  const [favoriteOnly, setFavoriteOnly] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [renameText, setRenameText] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -45,11 +46,11 @@ export default function GroupView({
   useEffect(() => {
     let active = true;
     setQuestions(null);
-    void core.listQuestions(groupId).then((list) => {
+    void core.listQuestions(groupId, { favoriteOnly }).then((list) => {
       if (active) setQuestions(list);
     });
     return () => { active = false; };
-  }, [core, groupId]);
+  }, [core, groupId, favoriteOnly]);
 
   function goToEntry() {
     writeEntryGroupId(groupId);
@@ -136,6 +137,15 @@ export default function GroupView({
         </span>
         <div className="grow" />
         <button
+          className={`switch ${favoriteOnly ? 'on' : ''}`}
+          type="button"
+          role="switch"
+          aria-checked={favoriteOnly}
+          onClick={() => setFavoriteOnly((prev) => !prev)}
+        >
+          <i />只看收藏
+        </button>
+        <button
           className="btn btn-ghost"
           type="button"
           onClick={() => { setRenameText(name); setRenaming(true); }}
@@ -153,8 +163,12 @@ export default function GroupView({
       <hr className="hairline" />
       {questions === null ? null : questions.length === 0 ? (
         <div className="flex flex-wrap items-center gap-[14px]">
-          <p className="text-t14 text-faint m-0">这一组还没有题。</p>
-          <button className="btn" type="button" onClick={goToEntry}>录入</button>
+          <p className="text-t14 text-faint m-0">
+            {favoriteOnly ? '这一组还没有收藏的题。' : '这一组还没有题。'}
+          </p>
+          {!favoriteOnly && (
+            <button className="btn" type="button" onClick={goToEntry}>录入</button>
+          )}
         </div>
       ) : (
         <ul className="dotlist list-none m-0 p-0">

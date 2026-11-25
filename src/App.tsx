@@ -85,6 +85,7 @@ export default function App({ core }: { core: Core }) {
               groups={groups ?? []}
               refreshGroups={refresh}
               onItemChange={setPracticeItem}
+              showToast={showToast}
             />
           ) : (
             <GroupView
