@@ -193,6 +193,7 @@ export default function PracticeView({
           <div>
             <h2 className="text-t16 font-semibold text-ink-2 m-0 mb-[14px]">
               本轮完成：{items.length} 道，对 {tally.correct} 错 {tally.wrong}。
+              下一轮已重新打乱。
             </h2>
             <div className="flex flex-wrap gap-[10px]">
               <button className="btn btn-primary" type="button"
