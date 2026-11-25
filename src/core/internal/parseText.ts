@@ -20,38 +20,31 @@ const OPTION_TOKEN = /([A-Za-z])\s*[.、．]\s*/g;
 const ANSWER_PREFIX = /^\s*答案\s*[:：]\s*(.*)$/;
 const EXPLANATION_PREFIX = /^\s*解析\s*[:：]\s*(.*)$/;
 const RANGE_TOKEN = /^(\d+)\s*-\s*(\d+)$/;
-const NUMBERED_TOKEN = /^(\d+)([A-Za-z√×对错]{1,24})$/;
-const LETTERS_ONLY = /^[A-Za-z√×对错]{1,24}$/;
+const NUMBERED_TOKEN = /^(\d+)([A-Za-z√×对错正确误]{1,24})$/;
+const LETTERS_ONLY = /^[A-Za-z√×对错正确误]{1,24}$/;
 
 interface Block {
   no: number;
   lines: string[];
 }
 
-/** Split a pasted answer notation into per-question tokens and plain answers. */
-function splitNotation(raw: string): { plain: string; numbered: string[] } {
+/** Separate plain answers from the numbered token stream of one line. */
+function splitNotation(raw: string): { plain: string; tokens: string[] } {
   const tokens = raw.split(/[\s　]+/).filter(Boolean);
-  const numbered: string[] = [];
   let plain = '';
   for (let i = 0; i < tokens.length; i += 1) {
     const token = tokens[i];
-    if (RANGE_TOKEN.test(token)) {
-      numbered.push(token);
-      const letters = tokens[i + 1];
-      if (letters && LETTERS_ONLY.test(letters) && !RANGE_TOKEN.test(letters)) {
-        numbered.push(letters);
-        i += 1;
-      }
-    } else if (NUMBERED_TOKEN.test(token)) {
-      numbered.push(token);
-    } else if (LETTERS_ONLY.test(token)) {
+    if (!RANGE_TOKEN.test(token) && !NUMBERED_TOKEN.test(token)
+      && LETTERS_ONLY.test(token)) {
       plain += token.toUpperCase();
     }
   }
-  return { plain, numbered };
+  // Keep the whole token stream: a range header and its letters may be on
+  // different lines, and applyNumbered pairs them after all lines are read.
+  return { plain, tokens };
 }
 
-/** Expand `1-5 ABCDA`; a length mismatch leaves every number in the range blank. */
+/** Expand `1-5 ABCDA` by number; unmatched numbers stay blank. */
 function applyNumbered(tokens: string[], answers: Map<number, string>): void {
   for (let i = 0; i < tokens.length; i += 1) {
     const token = tokens[i];
@@ -65,11 +58,8 @@ function applyNumbered(tokens: string[], answers: Map<number, string>): void {
       i += 1;
       const numbers: number[] = [];
       for (let no = from; no <= to; no += 1) numbers.push(no);
-      if (letters.length === numbers.length) {
-        numbers.forEach((no, index) => answers.set(no, letters[index]));
-      } else {
-        numbers.forEach((no) => answers.set(no, ''));
-      }
+      // Map letters to question numbers 1:1; unmatched numbers stay missing.
+      numbers.forEach((no, index) => answers.set(no, letters[index] ?? ''));
       continue;
     }
     const numbered = NUMBERED_TOKEN.exec(token);
@@ -156,6 +146,7 @@ export function parseText(text: string): ReviewDraft {
   }
 
   const numberedTokens: string[] = [];
+  const rawAnswers: string[] = [];
   const questions: DraftQuestion[] = blocks.map((block, index) => {
     const stem: string[] = [];
     const options: Option[] = [];
@@ -177,7 +168,7 @@ export function parseText(text: string): ReviewDraft {
         section = 'answer';
         const notation = splitNotation(answerMatch[1]);
         if (notation.plain) plainAnswer = notation.plain;
-        numberedTokens.push(...notation.numbered);
+        numberedTokens.push(...notation.tokens);
         continue;
       }
       const onLine = parseOptionLine(trimmed);
@@ -186,43 +177,47 @@ export function parseText(text: string): ReviewDraft {
         options.push(...onLine);
         continue;
       }
-      if (splitNotation(trimmed).numbered.length > 0) {
+      const notation = splitNotation(trimmed);
+      if (notation.tokens.some((token) => RANGE_TOKEN.test(token)
+        || NUMBERED_TOKEN.test(token))) {
         section = 'answer';
-        numberedTokens.push(...splitNotation(trimmed).numbered);
+        numberedTokens.push(...notation.tokens);
+        continue;
+      }
+      if (section === 'answer' && notation.tokens.length > 0) {
+        numberedTokens.push(...notation.tokens);
         continue;
       }
       if (section === 'explanation') explanation.push(trimmed);
       else if (section === 'stem' || section === 'options') stem.push(trimmed);
     }
 
-    const type = inferType(plainAnswer, options);
-    const question: DraftQuestion = {
+    rawAnswers.push(plainAnswer);
+    return {
       draftId: `draft-${index + 1}`,
       sourceNo: block.no,
-      type,
+      type: 'single',
       stem: stem.join('\n').trim(),
       options,
-      answerText: answerKeyFor(type, plainAnswer, options),
+      answerText: '',
       explanation: explanation.join('\n').trim(),
       missingAnswer: true,
       sharedOptions: null,
       subQuestions: null,
     };
-    return question;
   });
 
   const byNumber = new Map<number, string>();
   applyNumbered(numberedTokens, byNumber);
-  for (const question of questions) {
-    if (byNumber.has(question.sourceNo)) {
-      question.answerText = answerKeyFor(
-        question.type, byNumber.get(question.sourceNo) ?? '', question.options,
-      );
-    }
-  }
-  for (const question of questions) {
+  questions.forEach((question, index) => {
+    // A trailing answer block decides the type just as an inline one does.
+    const raw = byNumber.has(question.sourceNo)
+      ? byNumber.get(question.sourceNo) ?? ''
+      : rawAnswers[index];
+    question.type = inferType(raw, question.options);
+    question.answerText = answerKeyFor(question.type, raw, question.options);
     question.missingAnswer = missingAnswer(question);
-  }
+  });
 
   const warnings: ReviewWarning[] = [];
   const missingNumbers = questions.flatMap((question, index) =>
