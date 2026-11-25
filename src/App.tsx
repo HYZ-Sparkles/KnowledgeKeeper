@@ -109,6 +109,10 @@ export default function App({ core }: { core: Core }) {
               meta={meta}
               counts={counts}
               refreshMeta={refresh}
+              onRestored={() => {
+                navigate({ name: 'home' });
+                return refresh();
+              }}
               showToast={showToast}
             />
           ) : (

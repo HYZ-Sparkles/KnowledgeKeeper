@@ -3,7 +3,7 @@ import type {
   LibraryMeta, Question, QuestionInput, QuestionView, Schedule, Attempt,
   RoundItem, SubmittedAnswer, SubmitResult, SubQuestionResult,
   ListQuestionsOptions, ReviewDraft, FileLike, FileImportResult,
-  LibraryCounts,
+  LibraryCounts, BackupInfo, RestoreSummary,
 } from './types';
 import {
   draftAnswer, matchingDraftAnswer, parseText, trueFalseOptions,
@@ -15,7 +15,8 @@ import { grade, gradeMatching } from './internal/grade';
 import { buildRound } from './internal/round';
 import { advance, localDay } from './internal/schedule';
 import {
-  BACKUP_SCHEMA_VERSION, serializeBackup, type BackupSnapshot,
+  BACKUP_SCHEMA_VERSION, serializeBackup, parseBackup,
+  inspectBackup as inspectBackupJson, type BackupSnapshot,
 } from './internal/backup';
 
 export { INTERVALS } from './internal/schedule';
@@ -72,6 +73,10 @@ export interface Core {
   backupFileName(): string;
   /** Read-only counts for the backup page pill; never parses a backup. */
   getLibraryCounts(): Promise<LibraryCounts>;
+  /** Read-only counts from a backup file, for the confirmation dialog. */
+  inspectBackup(json: string): BackupInfo;
+  /** Validate first, then replace the whole library; lastBackupAt comes from the file. */
+  restore(json: string): Promise<RestoreSummary>;
 }
 
 /**
@@ -434,6 +439,27 @@ export function createCore(deps: CoreDeps): Core {
         storage.getQuestions(), storage.getAttempts(),
       ]);
       return { questions: questions.length, attempts: attempts.length };
+    },
+    inspectBackup(json: string): BackupInfo {
+      return inspectBackupJson(json);
+    },
+    async restore(json: string): Promise<RestoreSummary> {
+      // Validation happens before any write, so a bad file changes nothing.
+      const snapshot = parseBackup(json);
+      await ensureInitialized();
+      await storage.clear();
+      await storage.putMeta(snapshot.meta);
+      for (const group of snapshot.groups) await storage.putGroup(group);
+      for (const question of snapshot.questions) await storage.putQuestion(question);
+      for (const [id, schedule] of Object.entries(snapshot.schedules)) {
+        await storage.putSchedule(id, schedule);
+      }
+      for (const attempt of snapshot.attempts) await storage.putAttempt(attempt);
+      return {
+        groups: snapshot.groups.length,
+        questions: snapshot.questions.length,
+        lastBackupAt: snapshot.meta.lastBackupAt,
+      };
     },
   };
 }

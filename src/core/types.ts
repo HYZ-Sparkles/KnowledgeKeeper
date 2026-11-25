@@ -167,6 +167,21 @@ export interface LibraryCounts {
   attempts: number;
 }
 
+/** Read-only facts the restore dialog reads before asking for confirmation. */
+export interface BackupInfo {
+  schemaVersion: number;
+  groups: number;
+  questions: number;
+  lastBackupAt: string | null;
+}
+
+/** Observable result of replacing the whole library from a backup. */
+export interface RestoreSummary {
+  groups: number;
+  questions: number;
+  lastBackupAt: string | null;
+}
+
 /** Per-type question counts shown as group-page pills. */
 export interface GroupTypeCounts {
   single: number;
