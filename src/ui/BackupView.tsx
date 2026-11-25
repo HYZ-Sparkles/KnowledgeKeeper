@@ -140,8 +140,23 @@ export default function BackupView({
             </div>
           )}
         </section>
-        {/* 工单 21 预留槽位：在此加入「装到 iPad 主屏幕」说明块；本工单不实现。 */}
-        <section data-slot="ipad-home-screen" />
+        <section className="panel" data-slot="ipad-home-screen">
+          <h2>装到 iPad 主屏幕</h2>
+          <div className="install">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
+              stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
+              <rect x="2.5" y="2.5" width="15" height="15" rx="3.5" />
+              <path d="M10 6v8M6.6 10.4 10 13.8l3.4-3.4"
+                strokeLinecap="round" />
+            </svg>
+            <p>
+              {'在 Safari 里点「分享」，选'}
+              <b>添加到主屏幕</b>
+              {'。之后从桌面图标打开是全屏无地址栏的，'}
+              <b>也不会被 Safari 按 7 天未访问清理存储</b>。
+            </p>
+          </div>
+        </section>
       </div>
       {pending && (
         <Dialog

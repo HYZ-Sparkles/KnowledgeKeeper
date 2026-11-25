@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { createCore } from './core';
 import { indexedDbAdapter } from './core/indexeddb-adapter';
+import { registerServiceWorker } from './pwa';
 import './index.css';
 
 // Composition root: dependencies are injected here, never created in the core.
@@ -17,3 +18,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <App core={core} />
   </React.StrictMode>,
 );
+
+registerServiceWorker();

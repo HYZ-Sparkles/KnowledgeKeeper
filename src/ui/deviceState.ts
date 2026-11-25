@@ -1,6 +1,28 @@
 /** Device-local UI state: never stored in the core or in backups. */
 const ENTRY_GROUP_KEY = 'kk.entry.groupId';
 const IMPORT_GROUP_KEY = 'kk.import.groupId';
+const HOME_BANNER_KEY = 'kk.home.installBannerDismissed';
+
+export function isStandaloneMode(): boolean {
+  return typeof window.matchMedia === 'function'
+    && window.matchMedia('(display-mode: standalone)').matches;
+}
+
+export function readHomeBannerDismissed(): boolean {
+  try {
+    return window.localStorage.getItem(HOME_BANNER_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function writeHomeBannerDismissed(): void {
+  try {
+    window.localStorage.setItem(HOME_BANNER_KEY, '1');
+  } catch {
+    // Storage can be unavailable in private mode; dismissal lasts this visit.
+  }
+}
 
 export function readEntryGroupId(): string | null {
   try {

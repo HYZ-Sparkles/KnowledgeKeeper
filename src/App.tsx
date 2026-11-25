@@ -7,6 +7,9 @@ import { currentRoute, navigate, type Route } from './router';
 import BackupView from './ui/BackupView';
 import { backupBadge, backupRailText } from './ui/backupCopy';
 import Breadcrumb from './ui/Breadcrumb';
+import {
+  isStandaloneMode, readHomeBannerDismissed, writeHomeBannerDismissed,
+} from './ui/deviceState';
 import EntryView from './ui/EntryView';
 import GroupView from './ui/GroupView';
 import ImportView from './ui/ImportView';
@@ -317,6 +320,8 @@ function HomeView({ groups, meta }: { groups: GroupSummary[]; meta: LibraryMeta 
   const dueTotal = groups.reduce((sum, g) => sum + g.dueCount, 0);
   const inReview = groups.reduce((sum, g) => sum + g.inReviewCount, 0);
   const badge = backupBadge(meta);
+  const [dismissed, setDismissed] = useState(readHomeBannerDismissed);
+  const showBanner = !isStandaloneMode() && !dismissed;
   return (
     <>
       <Breadcrumb trail={['我的题库']} />
@@ -325,6 +330,23 @@ function HomeView({ groups, meta }: { groups: GroupSummary[]; meta: LibraryMeta 
         {groups.length} 个分组，{totalQuestions} 道题。做错的题会按
         1、2、4、7、15、30 天重新出现，直到通过最后一个间隔。
       </p>
+      {showBanner && (
+        <div className="warn install-banner" role="status">
+          <span>
+            {'在 Safari 点「分享 → 添加到主屏幕」，全屏使用，存储也不会被 Safari 清理。'}
+          </span>
+          <button
+            className="btn"
+            type="button"
+            onClick={() => {
+              writeHomeBannerDismissed();
+              setDismissed(true);
+            }}
+          >
+            知道了
+          </button>
+        </div>
+      )}
       <div className="pills">
         <span className="pill bg-orange-wash text-[#9C5620]">
           <b className="num">{dueTotal}</b> 道今天到期
