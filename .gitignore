@@ -1,0 +1,74 @@
+# 仓库只放源码、文档和可复现的脚本。
+# 凡是能由代码重出、由工具生成、或只对本机有意义的文件，都不进版本库。
+
+# ---------- 操作系统 ----------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# ---------- 编辑器与 IDE ----------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+\#*\#
+
+# ---------- Node 与包管理 ----------
+node_modules/
+.pnpm-store/
+.npm/
+.nvmrc.local
+# 工具链固定用 pnpm（见 spec「架构」），别的锁文件不该混进来
+package-lock.json
+yarn.lock
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# ---------- 构建产物与缓存 ----------
+dist/
+dist-ssr/
+build/
+dev-dist/
+.vite/
+.turbo/
+.cache/
+coverage/
+*.tsbuildinfo
+.eslintcache
+*.local
+
+# ---------- 环境变量与密钥 ----------
+.env
+.env.*
+!.env.example
+
+# ---------- 测试与端到端产物 ----------
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
+# ---------- Python（原型阶段的截图脚本） ----------
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# ---------- 设计阶段的本机产物 ----------
+# 截图随时可以用 shot.py / shot_state.py 重出，二进制不进仓库
+.scratch/**/shots/
+.scratch/**/design-demos/polish/
+# 参照站抓下来的页面、样式和截图属于第三方内容，只作本机比对；
+# 量出来的结论是文字，留在 refs/measured.md 里
+.scratch/**/refs/*
+!.scratch/**/refs/measured.md
