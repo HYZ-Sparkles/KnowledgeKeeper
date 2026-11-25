@@ -47,6 +47,21 @@ export function scheduleText(schedule: Schedule, today: string): string {
   return `第 ${schedule.stage} 个间隔 · ${dueText(schedule, today)}`;
 }
 
+/** True only when a reviewing question's local due day has arrived. */
+export function scheduleIsDue(schedule: Schedule, today: string): boolean {
+  return stateOf(schedule) === 'reviewing'
+    && schedule.dueDate !== null
+    && schedule.dueDate <= today;
+}
+
+/** Compact group-row copy; the practice label keeps the long form. */
+export function scheduleRowText(schedule: Schedule, today: string): string {
+  const state = stateOf(schedule);
+  if (state === 'unscheduled') return '未排期';
+  if (state === 'complete') return '完成复习';
+  return `第 ${schedule.stage}/6 · ${dueText(schedule, today)}`;
+}
+
 /** The full label row: schedule plus live attempt counts. */
 export function scheduleLabel(
   schedule: Schedule, correctCount: number, wrongCount: number, today: string,

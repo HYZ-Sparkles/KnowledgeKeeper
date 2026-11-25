@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { Schedule, SubmitResult } from '../core/types';
 import {
-  rulerCells, rulerNote, scheduleConsequence, scheduleLabel, scheduleText,
+  rulerCells, rulerNote, scheduleConsequence, scheduleIsDue, scheduleLabel,
+  scheduleRowText, scheduleText,
 } from './scheduleCopy';
 
 const unscheduled: Schedule = { stage: 0, dueDate: null };
@@ -49,6 +50,30 @@ describe('练习反馈 · 排期后果七行文案', () => {
     expect(scheduleConsequence(outcome(
       complete, { stage: 1, dueDate: '2026-10-14' }, false,
     ))).toBe('完成复习后再答错，重新成为错题，回到第 1 个间隔，明天再出现。');
+  });
+});
+
+describe('分组题目行的紧凑排期文案', () => {
+  it('复习中用第 k/6，两个终态用文字', () => {
+    expect(scheduleRowText({ stage: 3, dueDate: '2026-10-12' }, '2026-10-14'))
+      .toBe('第 3/6 · 逾期 2 天');
+    expect(scheduleRowText({ stage: 1, dueDate: '2026-10-14' }, '2026-10-14'))
+      .toBe('第 1/6 · 今天到期');
+    expect(scheduleRowText({ stage: 2, dueDate: '2026-10-18' }, '2026-10-14'))
+      .toBe('第 2/6 · 10 月 18 日到期');
+    expect(scheduleRowText(unscheduled, '2026-10-14')).toBe('未排期');
+    expect(scheduleRowText(complete, '2026-10-14')).toBe('完成复习');
+  });
+
+  it('只有到期的复习题标为到期', () => {
+    expect(scheduleIsDue({ stage: 3, dueDate: '2026-10-12' }, '2026-10-14'))
+      .toBe(true);
+    expect(scheduleIsDue({ stage: 3, dueDate: '2026-10-14' }, '2026-10-14'))
+      .toBe(true);
+    expect(scheduleIsDue({ stage: 3, dueDate: '2026-10-15' }, '2026-10-14'))
+      .toBe(false);
+    expect(scheduleIsDue(unscheduled, '2026-10-14')).toBe(false);
+    expect(scheduleIsDue(complete, '2026-10-14')).toBe(false);
   });
 });
 

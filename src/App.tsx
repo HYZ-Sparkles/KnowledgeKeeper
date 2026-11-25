@@ -46,12 +46,14 @@ export default function App({ core }: { core: Core }) {
   const today = new Intl.DateTimeFormat('zh-CN', {
     month: 'long', day: 'numeric', weekday: 'short',
   }).format(new Date());
+  const dueTotal = (groups ?? []).reduce((sum, g) => sum + g.dueCount, 0);
 
   return (
     <>
       <Topbar
         active={effectiveRoute.name === 'entry' ? 'entry' : 'library'}
         today={today}
+        dueTotal={dueTotal}
       />
       <div className="shell">
         <LeftRail groups={groups ?? []} route={effectiveRoute} />
@@ -98,7 +100,9 @@ export default function App({ core }: { core: Core }) {
   );
 }
 
-function Topbar({ active, today }: { active: string; today: string }) {
+function Topbar({
+  active, today, dueTotal,
+}: { active: string; today: string; dueTotal: number }) {
   const nav = [
     { key: 'library', label: '题库', hash: '#home' },
     { key: 'entry', label: '录入', hash: '#entry' },
@@ -122,6 +126,8 @@ function Topbar({ active, today }: { active: string; today: string }) {
       </nav>
       <div className="topbar-right ml-auto flex items-center gap-[14px] text-t13_5 text-mute">
         <span className="num">{today}</span>
+        <i className="inline-block h-[3px] w-[3px] rounded-full bg-faint" />
+        <span>今天到期 <b className="num font-semibold text-orange">{dueTotal}</b> 道</span>
       </div>
     </header>
   );
@@ -145,7 +151,7 @@ function LeftRail({ groups, route }: { groups: GroupSummary[]; route: Route }) {
               >
                 <span className="truncate">{group.name}</span>
                 <em className={`ml-auto not-italic text-[12px] num ${dueCount === 0 ? 'text-faint' : 'text-orange'}`}>
-                  {dueCount > 0 ? dueCount : ''}
+                  {dueCount}
                 </em>
               </button>
             </li>
@@ -251,7 +257,9 @@ function HomeView({ groups, meta }: { groups: GroupSummary[]; meta: LibraryMeta 
               <span className="meta flex-none text-t13 text-mute num flex items-center gap-[14px]">
                 <span>{questionCount} 题</span>
                 <span>{correctRate === null ? '尚未练习' : `正确率 ${Math.round(correctRate * 100)}%`}</span>
-                <span>{dueCount > 0 ? `到期 ${dueCount}` : '无到期'}</span>
+                <span className={dueCount > 0 ? 'text-orange' : 'text-green'}>
+                  {dueCount > 0 ? `到期 ${dueCount}` : '无到期'}
+                </span>
               </span>
             </button>
           </li>

@@ -7,7 +7,7 @@ import { navigate } from '../router';
 import Breadcrumb from './Breadcrumb';
 import Dialog from './Dialog';
 import QuestionForm from './QuestionForm';
-import { localDayString, scheduleLabel } from './scheduleCopy';
+import { localDayString, scheduleRowText } from './scheduleCopy';
 
 const TYPE_LABELS: Record<string, string> = {
   single: '单选题',
@@ -74,6 +74,8 @@ export default function QuestionPage({
   if (missing) return <p className="text-t14 text-faint">题目不存在。</p>;
   if (!question) return null;
 
+  const today = localDayString(new Date());
+
   const actions = (
     <>
       <button className="btn btn-ghost" type="button" onClick={back}>取消</button>
@@ -94,11 +96,10 @@ export default function QuestionPage({
       <p className="flex flex-wrap items-center gap-[10px] text-t13_5 text-mute m-0">
         <span>{TYPE_LABELS[question.type] ?? question.type}</span>
         <span>·</span>
-        <span>
-          {scheduleLabel(
-            question.schedule, question.correctCount, question.wrongCount,
-            localDayString(new Date()),
-          )}
+        <span>{scheduleRowText(question.schedule, today)}</span>
+        <span>·</span>
+        <span className="num">
+          {question.correctCount} 对 {question.wrongCount} 错
         </span>
         <span>·</span>
         <span>{question.favorite ? '已收藏' : '未收藏'}</span>

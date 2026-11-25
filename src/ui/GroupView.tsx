@@ -5,7 +5,9 @@ import { navigate } from '../router';
 import Breadcrumb from './Breadcrumb';
 import Dialog from './Dialog';
 import { writeEntryGroupId } from './deviceState';
-import { localDayString, scheduleText } from './scheduleCopy';
+import {
+  localDayString, scheduleIsDue, scheduleRowText,
+} from './scheduleCopy';
 
 const TYPE_LABELS: Record<string, string> = {
   single: '单选题',
@@ -30,6 +32,9 @@ export default function GroupView({
   const summary = groups.find((g) => g.group.id === groupId);
   const name = summary?.group.name ?? '分组';
   const practiceCount = questions?.filter((q) => q.type !== 'matching').length ?? 0;
+  const questionCount = summary?.questionCount ?? 0;
+  const dueInGroup = summary?.dueCount ?? 0;
+  const today = localDayString(new Date());
 
   useEffect(() => {
     let active = true;
@@ -80,7 +85,9 @@ export default function GroupView({
         <span className="hintline">
           {practiceCount === 0
             ? '这一组还没有可练习的题，先录入或导入。'
-            : `${practiceCount} 道全部打乱`}
+            : dueInGroup > 0
+              ? `到期 ${dueInGroup} 道先出，其余 ${questionCount - dueInGroup} 道打乱`
+              : `没有到期的题，${questionCount} 道全部打乱`}
         </span>
         <div className="grow" />
         <button
@@ -117,8 +124,10 @@ export default function GroupView({
               >
                 <span className="qtype">{TYPE_LABELS[question.type] ?? question.type}</span>
                 <span className="row-title flex-1 min-w-0">{question.stem}</span>
-                <span className="meta flex-none text-t13_5 text-faint num w-[152px] text-right">
-                  {scheduleText(question.schedule, localDayString(new Date()))}
+                <span className={`meta flex-none text-t13_5 num w-[152px] text-right ${
+                  scheduleIsDue(question.schedule, today) ? 'text-orange' : 'text-faint'
+                }`}>
+                  {scheduleRowText(question.schedule, today)}
                 </span>
                 <span className="meta flex-none text-t13_5 text-mute num w-[74px] text-right">
                   {question.correctCount} 对 {question.wrongCount} 错

@@ -4,7 +4,7 @@ import type { GroupSummary, RoundItem, SubmitResult } from '../core/types';
 import { navigate } from '../router';
 import Breadcrumb from './Breadcrumb';
 import {
-  localDayString, scheduleConsequence, scheduleLabel,
+  localDayString, scheduleConsequence, scheduleIsDue, scheduleLabel,
 } from './scheduleCopy';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -35,6 +35,7 @@ export default function PracticeView({
   const [submitting, setSubmitting] = useState(false);
   const [finished, setFinished] = useState(false);
   const [tally, setTally] = useState({ correct: 0, wrong: 0 });
+  const [dueLeft, setDueLeft] = useState(0);
 
   const groupName = groups.find((g) => g.group.id === groupId)?.group.name ?? '分组';
 
@@ -45,7 +46,13 @@ export default function PracticeView({
     setResult(null);
     setFinished(false);
     setTally({ correct: 0, wrong: 0 });
-    void core.startRound(groupId).then(setItems, () => setItems([]));
+    setDueLeft(0);
+    void core.startRound(groupId).then((list) => {
+      setItems(list);
+      const today = localDayString(new Date());
+      setDueLeft(list.filter((entry) =>
+        scheduleIsDue(entry.schedule, today)).length);
+    }, () => setItems([]));
   }
 
   useEffect(() => { startRound(); }, [core, groupId]);
@@ -71,10 +78,12 @@ export default function PracticeView({
   async function submit() {
     const item = items?.[index];
     if (!item || result || picked.length === 0) return;
+    const wasDue = scheduleIsDue(item.schedule, localDayString(new Date()));
     setSubmitting(true);
     try {
       const outcome = await core.submitAnswer(item.id, picked);
       setResult(outcome);
+      if (wasDue) setDueLeft((count) => Math.max(0, count - 1));
       setTally((prev) => ({
         correct: prev.correct + (outcome.correct ? 1 : 0),
         wrong: prev.wrong + (outcome.correct ? 0 : 1),
@@ -142,6 +151,7 @@ export default function PracticeView({
             <span className="bar">
               <i style={{ width: `${((index + 1) / items.length) * 100}%` }} />
             </span>
+            <span>到期题 <b className="num font-semibold text-orange">{dueLeft}</b> 道未做</span>
             <span className="grow" />
             <button className="btn btn-ghost btn-small" type="button"
               onClick={leave}>退出练习</button>
