@@ -114,7 +114,7 @@ export function createCore(deps: CoreDeps): Core {
         return {
           fileName: file.name,
           text: '',
-          draft: parseExcel(await file.arrayBuffer()),
+          draft: assertQuestions(parseExcel(await file.arrayBuffer())),
           skipTextarea: true,
         };
       }
@@ -466,7 +466,11 @@ export function createCore(deps: CoreDeps): Core {
 
 /** One text parser for pasted text and for text extracted from files. */
 function draftFromText(text: string): ReviewDraft {
-  const draft = parseText(text);
+  return assertQuestions(parseText(text));
+}
+
+/** Every import path must reject an empty draft before it reaches review. */
+function assertQuestions(draft: ReviewDraft): ReviewDraft {
   if (draft.questions.length === 0) {
     throw new Error('没有识别到题目，请粘贴带题号的文本，或到「录入」页手动添加。');
   }

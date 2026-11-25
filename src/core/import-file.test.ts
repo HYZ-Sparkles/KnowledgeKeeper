@@ -131,6 +131,15 @@ describe('应用核心 · Excel 导入', () => {
     ]);
   });
 
+  it('只有表头的表格给出 0 题错误，不返回空草稿', async () => {
+    const core = setup();
+    const empty = workbookFile('空表.xlsx', [
+      ['题型', '题干', 'A', 'B', 'C', 'D', 'E', 'F', '答案', '解析'],
+    ]);
+
+    await expect(core.importFromFile(empty)).rejects.toThrow('没有识别到题目');
+  });
+
   it('空题型走推断、答案大写且判断符号规范成 √，空行跳过', async () => {
     const core = setup();
     const result = await core.importFromFile(
