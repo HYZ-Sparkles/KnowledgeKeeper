@@ -1,7 +1,10 @@
 import type {
   Clock, Random, StorageAdapter, Group, GroupSummary, LibraryMeta,
   Question, QuestionInput, QuestionView, Schedule, Attempt,
+  RoundItem, SubmittedAnswer, SubmitResult,
 } from './types';
+import { grade } from './internal/grade';
+import { buildRound } from './internal/round';
 
 export interface CoreDeps {
   storage: StorageAdapter;
@@ -29,6 +32,10 @@ export interface Core {
   createGroup(name: string): Promise<Group>;
   renameGroup(groupId: string, name: string): Promise<Group>;
   deleteGroup(groupId: string): Promise<void>;
+  /** One shuffled pass over the group's practicable questions. */
+  startRound(groupId: string): Promise<RoundItem[]>;
+  /** Grade one answer, append its attempt and return the observable outcome. */
+  submitAnswer(questionId: string, answer: SubmittedAnswer): Promise<SubmitResult>;
 }
 
 /**
@@ -188,6 +195,42 @@ export function createCore(deps: CoreDeps): Core {
       if (!found) throw new Error('题目不存在');
       // The storage adapter cascades schedules and attempts.
       await storage.deleteQuestion(questionId);
+    },
+    async startRound(groupId: string): Promise<RoundItem[]> {
+      await ensureInitialized();
+      const [groups, questions, schedules, attempts] = await Promise.all([
+        storage.getGroups(), storage.getQuestions(),
+        storage.getSchedules(), storage.getAttempts(),
+      ]);
+      if (!groups.some((g) => g.id === groupId)) throw new Error('分组不存在');
+      return buildRound(
+        questions.filter((q) => q.groupId === groupId), random,
+      ).map((question) => toQuestionView(question, schedules, attempts));
+    },
+    async submitAnswer(
+      questionId: string, answer: SubmittedAnswer,
+    ): Promise<SubmitResult> {
+      await ensureInitialized();
+      const question = (await storage.getQuestions())
+        .find((q) => q.id === questionId);
+      if (!question) throw new Error('题目不存在');
+      const correct = grade(question, answer);
+      const schedule = (await storage.getSchedules())[questionId]
+        ?? { stage: 0, dueDate: null };
+      await storage.putAttempt({
+        id: generateId(random, 'a'),
+        questionId,
+        subIndex: null,
+        correct,
+        at: clock.now().toISOString(),
+      });
+      return {
+        questionId,
+        correct,
+        correctAnswer: [...question.answer],
+        before: schedule,
+        after: schedule,
+      };
     },
   };
 }

@@ -52,6 +52,64 @@
   .btn-primary:disabled { @apply bg-[#C9D4E8] border-[#C9D4E8] text-white; }
   .btn-ghost { @apply border-transparent text-amber px-[6px]; }
   .btn-danger { @apply text-red; }
+  .btn-small { @apply h-[34px] px-[13px] text-t13_5; }
+  .grow { @apply flex-1; }
+
+  /* 练习页：发丝线分隔的整宽选项行与纸底反馈块。 */
+  .practice-head {
+    @apply flex items-center gap-[12px] mb-[20px] text-[13px] text-mute;
+  }
+  .practice-head .bar {
+    @apply h-[3px] max-w-[280px] flex-1 overflow-hidden rounded-4 bg-[#EAE4DA];
+  }
+  .practice-head .bar i { @apply block h-full bg-blue; }
+  .qstem {
+    @apply m-0 mb-[6px] max-w-[40ch] text-t30 font-medium text-ink-2
+           tracking-[-.2px];
+  }
+  .qlabel {
+    @apply flex items-center gap-[12px] mb-[14px] max-w-[720px]
+           text-[13px] text-mute;
+  }
+  .opts { @apply list-none m-0 mt-[24px] p-0 max-w-[720px]; }
+  .opt {
+    @apply relative flex w-full items-start gap-[18px] border-t border-rule
+           px-4 py-4 pl-3 text-left;
+  }
+  .opts li:last-child .opt { @apply border-b; }
+  .opt:not(:disabled):hover { @apply bg-[#FBF7F0]; }
+  .opt .lt {
+    @apply w-[18px] flex-none text-center text-t15 font-semibold text-mute;
+  }
+  .opt .tx { @apply text-t16 text-ink; }
+  .opt.sel { @apply bg-paper-2; }
+  .opt.sel .lt { @apply text-blue; }
+  .opt.sel::before {
+    content: ''; @apply absolute inset-y-0 left-0 w-[2px] bg-blue;
+  }
+  .opt.right .lt { @apply text-green; }
+  .opt.wrong .lt { @apply text-red; }
+  .opt .tick {
+    @apply ml-auto self-center text-[12.5px] text-green;
+  }
+  .opt .tick.bad { @apply text-red; }
+  .submit-row { @apply flex items-center gap-[14px] mt-[26px]; }
+  .hintline { @apply text-[13px] text-mute; }
+  .feedback {
+    @apply mt-[24px] max-w-[720px] border-l-2 border-green bg-paper-2
+           px-5 py-[18px];
+  }
+  .feedback.bad { @apply border-red; }
+  .fb-head { @apply mb-[6px] text-t15 font-semibold text-green; }
+  .feedback.bad .fb-head { @apply text-red; }
+  .fb-body { @apply text-[14.5px] leading-[1.7] text-ink; }
+  .fb-body b { @apply text-ink-2; }
+  .fb-exp {
+    @apply mt-[10px] pt-[10px] border-t border-rule text-t14
+           leading-[1.75] text-mute;
+  }
+  .fb-exp b { @apply font-semibold text-ink-2; }
+  .fb-next { @apply mt-[14px]; }
   .form-grid { @apply grid gap-[14px] max-w-[700px] mt-1; }
   .two { @apply grid grid-cols-2 gap-4; }
   .field { @apply grid gap-[6px] text-[13px] text-mute; }

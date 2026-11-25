@@ -46,11 +46,26 @@ export interface QuestionInput {
   subQuestions?: SubQuestion[] | null;
 }
 
-/** A question with its derived state; no practice has happened yet for new questions. */
+/** A question with its derived state; counts are computed from attempts. */
 export interface QuestionView extends Question {
   schedule: Schedule;
   correctCount: number;
   wrongCount: number;
+}
+
+/** One queue item: full question content, schedule, stats and favorite are all present. */
+export type RoundItem = QuestionView;
+
+/** Letters picked by the user; matching questions send one array per sub-question. */
+export type SubmittedAnswer = string[];
+
+/** The observable outcome of one submission; UI renders both schedule states. */
+export interface SubmitResult {
+  questionId: string;
+  correct: boolean;
+  correctAnswer: string[];
+  before: Schedule;
+  after: Schedule;
 }
 
 export interface Group {

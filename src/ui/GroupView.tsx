@@ -28,6 +28,7 @@ export default function GroupView({
   const [deleting, setDeleting] = useState(false);
   const summary = groups.find((g) => g.group.id === groupId);
   const name = summary?.group.name ?? '分组';
+  const practiceCount = questions?.filter((q) => q.type !== 'matching').length ?? 0;
 
   useEffect(() => {
     let active = true;
@@ -67,6 +68,19 @@ export default function GroupView({
         今天到期 {summary?.dueCount ?? 0} 道。到期题排在最前面，最久到期的先出。
       </p>
       <div className="toolbar">
+        <button
+          className="btn btn-primary"
+          type="button"
+          disabled={practiceCount === 0}
+          onClick={() => navigate({ name: 'practice', groupId })}
+        >
+          ▶ 开始练习
+        </button>
+        <span className="hintline">
+          {practiceCount === 0
+            ? '这一组还没有可练习的题，先录入或导入。'
+            : `${practiceCount} 道全部打乱`}
+        </span>
         <div className="grow" />
         <button
           className="btn btn-ghost"

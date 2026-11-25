@@ -5,6 +5,7 @@ import { currentRoute, navigate, type Route } from './router';
 import Breadcrumb from './ui/Breadcrumb';
 import EntryView from './ui/EntryView';
 import GroupView from './ui/GroupView';
+import PracticeView from './ui/PracticeView';
 import QuestionPage from './ui/QuestionPage';
 import Toast from './ui/Toast';
 
@@ -69,6 +70,13 @@ export default function App({ core }: { core: Core }) {
               groups={groups ?? []}
               refreshGroups={refresh}
               showToast={showToast}
+            />
+          ) : effectiveRoute.name === 'practice' ? (
+            <PracticeView
+              core={core}
+              groupId={effectiveRoute.groupId}
+              groups={groups ?? []}
+              refreshGroups={refresh}
             />
           ) : (
             <GroupView
@@ -146,6 +154,7 @@ function LeftRail({ groups, route }: { groups: GroupSummary[]; route: Route }) {
 }
 
 function RightRail({ route }: { route: Route }) {
+  if (route.name === 'practice') return <aside className="rail-right" />;
   return (
     <aside className="rail-right">
       {route.name === 'entry' ? (
