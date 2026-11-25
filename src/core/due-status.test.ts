@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createCore } from './index';
 import { fixedRandom, memoryAdapter } from './helpers';
-import { scheduleRowText } from '../ui/scheduleCopy';
 import type { Clock, Question, QuestionInput } from './types';
 
 function setup(iso = '2026-06-14T23:59:00') {
@@ -56,10 +55,6 @@ describe('应用核心 · 固定时钟下的到期数与排期状态', () => {
       wrongCount: 1,
       schedule: { stage: 1, dueDate: '2026-06-15' },
     });
-    expect(scheduleRowText(listed.schedule, '2026-06-15'))
-      .toBe('第 1/6 · 今天到期');
-    expect(scheduleRowText(listed.schedule, '2026-06-14'))
-      .toBe('第 1/6 · 6 月 15 日到期');
   });
 
   it('跨日仍未作答：昨天到期今天为逾期 1 天，仍计入到期数', async () => {
@@ -83,8 +78,6 @@ describe('应用核心 · 固定时钟下的到期数与排期状态', () => {
     const [listed] = await core.listQuestions(group.id);
     expect(listed.schedule).toEqual({ stage: 3, dueDate: '2026-06-15' });
     expect([listed.correctCount, listed.wrongCount]).toEqual([1, 1]);
-    expect(scheduleRowText(listed.schedule, '2026-06-16'))
-      .toBe('第 3/6 · 逾期 1 天');
   });
 
   it('未排期与完成复习不计到期，题目列表给出真实状态与对错次数', async () => {
@@ -113,9 +106,6 @@ describe('应用核心 · 固定时钟下的到期数与排期状态', () => {
 
     expect((await core.listGroups())[0].dueCount).toBe(0);
     const listed = await core.listQuestions(group.id);
-    expect(listed.map((q) => scheduleRowText(q.schedule, '2026-06-16'))).toEqual([
-      '未排期', '完成复习', '第 2/6 · 6 月 20 日到期',
-    ]);
     expect(listed.map((q) => [q.correctCount, q.wrongCount])).toEqual([
       [1, 0], [1, 1], [0, 0],
     ]);

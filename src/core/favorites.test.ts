@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { createCore } from './index';
-import { fixedClock, fixedRandom, memoryAdapter } from './helpers';
+import {
+  fixedClock, fixedRandom, memoryAdapter, observeBackup,
+} from './helpers';
 import type { QuestionInput } from './types';
 
 function seededCore(storage = memoryAdapter()) {
@@ -90,10 +92,10 @@ describe('应用核心 · 收藏与只看收藏', () => {
     expect([toggled.correctCount, toggled.wrongCount]).toEqual([0, 1]);
     expect((await watched.core.listQuestions(groupId, { favoriteOnly: true }))
       .map((q) => q.id)).toEqual([watched.match.id]);
-    expect(await watched.storage.getSchedules())
-      .toEqual(await control.storage.getSchedules());
-    expect(await watched.storage.getAttempts())
-      .toEqual(await control.storage.getAttempts());
+    const watchedBackup = await observeBackup(watched.core);
+    const controlBackup = await observeBackup(control.core);
+    expect(watchedBackup.schedules).toEqual(controlBackup.schedules);
+    expect(watchedBackup.attempts).toEqual(controlBackup.attempts);
 
     const roundAfter = (await watched.core.startRound(groupId))
       .map((item) => item.id);

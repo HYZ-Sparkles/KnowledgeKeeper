@@ -1,4 +1,6 @@
-import type { Clock, Random, StorageAdapter } from './types';
+import type {
+  Attempt, Clock, Random, Schedule, StorageAdapter,
+} from './types';
 
 /** Reusable deterministic clock for tests. */
 export function fixedClock(iso: string): Clock {
@@ -15,6 +17,16 @@ export function fixedRandom(seed = 1): Random {
       return state / 0x100000000;
     },
   };
+}
+
+/** Observe persisted state through the backup seam, not storage rows. */
+export async function observeBackup(
+  core: { backup(): Promise<string> },
+): Promise<{
+  schedules: Record<string, Schedule>;
+  attempts: Attempt[];
+}> {
+  return JSON.parse(await core.backup());
 }
 
 /** In-memory storage adapter for tests. Mirrors the IndexedDB adapter interface. */

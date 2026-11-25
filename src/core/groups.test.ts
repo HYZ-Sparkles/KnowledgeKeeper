@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { createCore } from './index';
-import { fixedClock, fixedRandom, memoryAdapter } from './helpers';
+import {
+  fixedClock, fixedRandom, memoryAdapter, observeBackup,
+} from './helpers';
 
 function setup() {
   const storage = memoryAdapter();
@@ -69,8 +71,8 @@ describe('应用核心 · 分组管理', () => {
       correctCount: 1, wrongCount: 0,
       schedule: { stage: 1, dueDate: '2026-01-02' },
     });
-    expect((await storage.getSchedules())[own.id]).toBeUndefined();
-    expect((await storage.getAttempts()).some((a) => a.questionId === own.id))
-      .toBe(false);
+    const snapshot = await observeBackup(core);
+    expect(snapshot.schedules[own.id]).toBeUndefined();
+    expect(snapshot.attempts.some((a) => a.questionId === own.id)).toBe(false);
   });
 });

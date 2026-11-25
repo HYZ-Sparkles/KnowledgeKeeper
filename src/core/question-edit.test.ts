@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { createCore } from './index';
-import { fixedClock, fixedRandom, memoryAdapter } from './helpers';
+import {
+  fixedClock, fixedRandom, memoryAdapter, observeBackup,
+} from './helpers';
 import type { QuestionInput } from './types';
 
 function setup() {
@@ -60,10 +62,11 @@ describe('应用核心 · 题目编辑与删除', () => {
       wrongCount: 1,
     });
     expect(await core.getQuestion(own.id)).toEqual(edited);
-    expect((await storage.getSchedules())[own.id]).toEqual({
+    const snapshot = await observeBackup(core);
+    expect(snapshot.schedules[own.id]).toEqual({
       stage: 2, dueDate: '2026-01-05',
     });
-    expect((await storage.getAttempts()).map((a) => a.id).sort()).toEqual([
+    expect(snapshot.attempts.map((a) => a.id).sort()).toEqual([
       'a-correct', 'a-wrong',
     ]);
   });
@@ -105,8 +108,8 @@ describe('应用核心 · 题目编辑与删除', () => {
       schedule: { stage: 3, dueDate: '2026-01-07' },
       correctCount: 1, wrongCount: 0,
     });
-    expect((await storage.getSchedules())[own.id]).toBeUndefined();
-    expect((await storage.getAttempts()).some((a) => a.questionId === own.id))
-      .toBe(false);
+    const snapshot = await observeBackup(core);
+    expect(snapshot.schedules[own.id]).toBeUndefined();
+    expect(snapshot.attempts.some((a) => a.questionId === own.id)).toBe(false);
   });
 });

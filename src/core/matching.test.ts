@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createCore } from './index';
-import { fixedRandom, memoryAdapter } from './helpers';
+import { fixedRandom, memoryAdapter, observeBackup } from './helpers';
 import type { Clock, QuestionInput } from './types';
 
 function setup(iso = '2026-03-02T09:00:00') {
@@ -91,13 +91,13 @@ describe('应用核心 · 匹配题一次提交与逐子题判定', () => {
   });
 
   it('任一子题错则整题错、回到第 1 个间隔，作答条数等于子题数', async () => {
-    const { core, clock, storage, question } = await seeded();
+    const { core, clock, question } = await seeded();
 
     await core.submitAnswer(question.id, [['A'], ['A'], ['A']]);
     clock.set('2026-03-03T09:00:00');
     await core.submitAnswer(question.id, [['A'], ['B'], ['C']]);
     clock.set('2026-03-05T09:00:00');
-    const before = (await storage.getAttempts()).filter(
+    const before = (await observeBackup(core)).attempts.filter(
       (a) => a.questionId === question.id,
     ).length;
     const wrong = await core.submitAnswer(question.id, [['A'], ['B'], ['A']]);
@@ -112,7 +112,7 @@ describe('应用核心 · 匹配题一次提交与逐子题判定', () => {
       subIndex: 2, submitted: ['A'], correctAnswer: ['C'],
     });
 
-    const attempts = (await storage.getAttempts()).filter(
+    const attempts = (await observeBackup(core)).attempts.filter(
       (a) => a.questionId === question.id,
     );
     expect(attempts.length - before).toBe(matching.subQuestions!.length);
@@ -123,7 +123,7 @@ describe('应用核心 · 匹配题一次提交与逐子题判定', () => {
   });
 
   it('多选子题按集合判定：漏选算错、顺序无关，时间取自注入时钟', async () => {
-    const { core, storage } = setup();
+    const { core } = setup();
     const [group] = await core.listGroups();
     const question = await core.createQuestion({
       ...matching,
@@ -141,7 +141,7 @@ describe('应用核心 · 匹配题一次提交与逐子题判定', () => {
     expect(passed.subResults?.[0]).toMatchObject({
       correct: true, correctAnswer: ['A', 'C'],
     });
-    const attempts = (await storage.getAttempts()).filter(
+    const attempts = (await observeBackup(core)).attempts.filter(
       (a) => a.questionId === question.id,
     );
     expect(attempts.map((a) => a.subIndex)).toEqual([0, 0]);
@@ -151,13 +151,14 @@ describe('应用核心 · 匹配题一次提交与逐子题判定', () => {
   });
 
   it('答案数量与子题数不符时拒绝提交，不写排期或作答', async () => {
-    const { core, storage, question } = await seeded();
+    const { core, question } = await seeded();
 
     await expect(core.submitAnswer(question.id, [['A'], ['B']]))
       .rejects.toThrow();
-    expect((await storage.getAttempts()).filter(
+    const snapshot = await observeBackup(core);
+    expect(snapshot.attempts.filter(
       (a) => a.questionId === question.id,
     )).toHaveLength(0);
-    expect((await storage.getSchedules())[question.id]).toBeUndefined();
+    expect(snapshot.schedules[question.id]).toBeUndefined();
   });
 });

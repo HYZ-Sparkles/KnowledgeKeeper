@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createCore } from './index';
-import { fixedRandom, memoryAdapter } from './helpers';
+import { fixedRandom, memoryAdapter, observeBackup } from './helpers';
 import type { Clock, Question, QuestionInput } from './types';
 
 function setup(iso = '2026-01-10T09:00:00') {
@@ -32,19 +32,19 @@ async function questionIn(core: Awaited<ReturnType<typeof setup>>['core']) {
 
 describe('应用核心 · 遗忘曲线状态机', () => {
   it('从未做错保持未排期；未排期答错进入第 1 个间隔，次日到期', async () => {
-    const { core, storage } = setup();
+    const { core } = setup();
     const alwaysRight = await questionIn(core);
     const missed = await questionIn(core);
 
     const kept = await core.submitAnswer(alwaysRight.id, ['B']);
     expect(kept.before).toEqual({ stage: 0, dueDate: null });
     expect(kept.after).toEqual({ stage: 0, dueDate: null });
-    expect((await storage.getSchedules())[alwaysRight.id]).toBeUndefined();
+    expect((await observeBackup(core)).schedules[alwaysRight.id]).toBeUndefined();
 
     const entered = await core.submitAnswer(missed.id, ['A']);
     expect(entered.before).toEqual({ stage: 0, dueDate: null });
     expect(entered.after).toEqual({ stage: 1, dueDate: '2026-01-11' });
-    expect((await storage.getSchedules())[missed.id]).toEqual(entered.after);
+    expect((await observeBackup(core)).schedules[missed.id]).toEqual(entered.after);
   });
 
   it('到期答对依次推进 1、2、4、7、15、30 天，第六个间隔后完成复习', async () => {
@@ -184,7 +184,7 @@ describe('应用核心 · 到期优先的轮', () => {
   });
 
   it('编辑有排期的题目只改内容，间隔与到期日不变', async () => {
-    const { core, storage } = await seeded();
+    const { core } = await seeded();
 
     await core.updateQuestion('q1', {
       type: 'single', stem: '改过的题 q1',
@@ -194,7 +194,7 @@ describe('应用核心 · 到期优先的轮', () => {
       answer: ['A'], explanation: '新解析',
     });
 
-    expect((await storage.getSchedules()).q1).toEqual({
+    expect((await observeBackup(core)).schedules.q1).toEqual({
       stage: 1, dueDate: '2026-01-05',
     });
     expect((await core.getQuestion('q1')).schedule).toEqual({
