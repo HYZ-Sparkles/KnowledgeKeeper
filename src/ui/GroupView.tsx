@@ -93,7 +93,13 @@ export default function GroupView({
         <ul className="dotlist list-none m-0 p-0">
           {questions.map((question) => (
             <li key={question.id}>
-              <div className="row flex w-full items-baseline gap-[14px] py-[15px] text-left">
+              <button
+                className="row flex w-full items-baseline gap-[14px] py-[15px] text-left"
+                type="button"
+                onClick={() => navigate({
+                  name: 'question', questionId: question.id,
+                })}
+              >
                 <span className="qtype">{TYPE_LABELS[question.type] ?? question.type}</span>
                 <span className="row-title flex-1 min-w-0">{question.stem}</span>
                 <span className="meta flex-none text-t13_5 text-faint num w-[152px] text-right">
@@ -102,7 +108,7 @@ export default function GroupView({
                 <span className="meta flex-none text-t13_5 text-mute num w-[74px] text-right">
                   {question.correctCount} 对 {question.wrongCount} 错
                 </span>
-              </div>
+              </button>
             </li>
           ))}
         </ul>

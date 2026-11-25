@@ -5,6 +5,7 @@ import { currentRoute, navigate, type Route } from './router';
 import Breadcrumb from './ui/Breadcrumb';
 import EntryView from './ui/EntryView';
 import GroupView from './ui/GroupView';
+import QuestionPage from './ui/QuestionPage';
 import Toast from './ui/Toast';
 
 export default function App({ core }: { core: Core }) {
@@ -60,6 +61,14 @@ export default function App({ core }: { core: Core }) {
               groups={groups ?? []}
               showToast={showToast}
               refreshGroups={refresh}
+            />
+          ) : effectiveRoute.name === 'question' ? (
+            <QuestionPage
+              core={core}
+              questionId={effectiveRoute.questionId}
+              groups={groups ?? []}
+              refreshGroups={refresh}
+              showToast={showToast}
             />
           ) : (
             <GroupView

@@ -1,4 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import {
+  useEffect, useState, type FormEvent, type ReactNode,
+} from 'react';
 import type { GroupSummary, QuestionInput, QuestionType } from '../core/types';
 
 export interface QuestionFormProps {
@@ -9,6 +11,8 @@ export interface QuestionFormProps {
   groupId?: string;
   onGroupChange?: (groupId: string) => void;
   onRequestCreateGroup?: () => void;
+  /** Extra bottom-row actions, e.g. the question page's cancel and delete. */
+  extraActions?: ReactNode;
 }
 
 interface SubFormState {
@@ -76,12 +80,18 @@ function makeState(value?: QuestionInput): FormState {
  */
 export default function QuestionForm({
   mode, initialValue, onSubmit, groups, groupId, onGroupChange,
-  onRequestCreateGroup,
+  onRequestCreateGroup, extraActions,
 }: QuestionFormProps) {
   const [state, setState] = useState<FormState>(() => makeState(initialValue));
+  const [answerCleared, setAnswerCleared] = useState(false);
   const { type, stem, options, answers, sharedOptions, subs, explanation } = state;
+  // In edit mode a matching question cannot become another type, or vice versa.
+  const lockedType = mode === 'edit' ? initialValue?.type : undefined;
 
-  useEffect(() => { setState(makeState(initialValue)); }, [initialValue]);
+  useEffect(() => {
+    setState(makeState(initialValue));
+    setAnswerCleared(false);
+  }, [initialValue]);
 
   const missing: string[] = [];
   if (!stem.trim()) missing.push('题干不能为空');
@@ -115,10 +125,22 @@ export default function QuestionForm({
   }
 
   function changeType(next: QuestionType) {
-    update({ type: next, answers: [] });
+    if (next === type) return;
+    let nextAnswers = state.answers;
+    let cleared = false;
+    if (next === 'truefalse' || type === 'truefalse') {
+      nextAnswers = [];
+      cleared = true;
+    } else if (type === 'multiple' && next === 'single' && nextAnswers.length > 1) {
+      nextAnswers = [];
+      cleared = true;
+    }
+    setAnswerCleared(cleared);
+    update({ type: next, answers: nextAnswers });
   }
 
   function toggleAnswer(letter: string) {
+    setAnswerCleared(false);
     setState((prev) => {
       if (prev.type === 'single') {
         return { ...prev, answers: prev.answers.includes(letter) ? [] : [letter] };
@@ -259,7 +281,15 @@ export default function QuestionForm({
             onChange={(event) => changeType(event.target.value as QuestionType)}
           >
             {(['single', 'multiple', 'truefalse', 'matching'] as const).map((value) => (
-              <option key={value} value={value}>{TYPE_LABELS[value]}</option>
+              <option
+                key={value}
+                value={value}
+                disabled={lockedType === 'matching'
+                  ? value !== 'matching'
+                  : lockedType !== undefined && value === 'matching'}
+              >
+                {TYPE_LABELS[value]}
+              </option>
             ))}
           </select>
         </label>
@@ -422,7 +452,10 @@ export default function QuestionForm({
                 type="button"
                 key={option.letter}
                 className={`opt-pick w-auto px-[14px] ${answers[0] === option.letter ? 'on' : ''}`}
-                onClick={() => update({ answers: [option.letter] })}
+                onClick={() => {
+                  setAnswerCleared(false);
+                  update({ answers: [option.letter] });
+                }}
               >
                 {option.letter} {option.text}
               </button>
@@ -476,6 +509,10 @@ export default function QuestionForm({
         </div>
       )}
 
+      {answerCleared && (
+        <p className="form-invalid">题型已改，请重新选择答案</p>
+      )}
+
       <label className="field">
         <span>解析（可以不填）</span>
         <textarea
@@ -492,6 +529,7 @@ export default function QuestionForm({
         <button className="btn btn-primary" type="submit" disabled={missing.length > 0}>
           {mode === 'create' ? '保存到题库' : '保存'}
         </button>
+        {extraActions}
       </div>
     </form>
   );

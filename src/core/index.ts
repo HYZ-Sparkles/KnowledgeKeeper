@@ -22,6 +22,10 @@ export interface Core {
   createQuestion(input: QuestionInput, groupId: string): Promise<QuestionView>;
   listQuestions(groupId: string): Promise<QuestionView[]>;
   getQuestion(questionId: string): Promise<QuestionView>;
+  /** Rewrites only editable content; schedule, attempts and favorite stay put. */
+  updateQuestion(questionId: string, input: QuestionInput): Promise<QuestionView>;
+  /** Removes the question and cascades its attempts and schedule. */
+  deleteQuestion(questionId: string): Promise<void>;
   createGroup(name: string): Promise<Group>;
   renameGroup(groupId: string, name: string): Promise<Group>;
   deleteGroup(groupId: string): Promise<void>;
@@ -162,6 +166,28 @@ export function createCore(deps: CoreDeps): Core {
       const found = question.find((q) => q.id === questionId);
       if (!found) throw new Error('题目不存在');
       return toQuestionView(found, schedules, attempts);
+    },
+    async updateQuestion(
+      questionId: string, input: QuestionInput,
+    ): Promise<QuestionView> {
+      await ensureInitialized();
+      const found = (await storage.getQuestions())
+        .find((q) => q.id === questionId);
+      if (!found) throw new Error('题目不存在');
+      const updated: Question = { ...found, ...editableFields(input) };
+      await storage.putQuestion(updated);
+      const [schedules, attempts] = await Promise.all([
+        storage.getSchedules(), storage.getAttempts(),
+      ]);
+      return toQuestionView(updated, schedules, attempts);
+    },
+    async deleteQuestion(questionId: string): Promise<void> {
+      await ensureInitialized();
+      const found = (await storage.getQuestions())
+        .some((q) => q.id === questionId);
+      if (!found) throw new Error('题目不存在');
+      // The storage adapter cascades schedules and attempts.
+      await storage.deleteQuestion(questionId);
     },
   };
 }
