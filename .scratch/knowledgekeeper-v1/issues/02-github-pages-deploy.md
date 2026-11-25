@@ -19,3 +19,4 @@
   - `.github/workflows/deploy.yml`：pnpm 12.23.0 + npmmirror(`.npmrc`) → `pnpm test` → `pnpm build` → Pages 发布；deploy job `needs: build`，测试不过不发布。
   - 国内访问不稳时同一份构建加 Cloudflare 备用入口的一句说明写在 `README.md`。
   - **需人工验证（第 3 项保留未勾选）**：本仓库当前无远端、未推送，无法在本地验证真实 Pages 地址在 iPad Safari / 桌面浏览器打开，以及 Pages 域下 IndexedDB 刷新后数据仍在。推送主分支并启用 Pages 后请逐项确认。
+- 2026-11-26 · code-review 修复：CI 触发器由 `branches: [main]` 改为 `[master, main]`（见 impl/wfix）。此前推送仓库默认分支 master 不会触发发布；真机 Pages 验证项仍需人工。

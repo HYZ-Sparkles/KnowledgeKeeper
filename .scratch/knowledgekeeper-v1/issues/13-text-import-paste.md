@@ -24,3 +24,4 @@
   - `importFromText` / `commitReview` 加入应用核心，解析器为私有 module；两步导入页、sticky 警示条（题号可点跳转、缺答案拦住写入）、写入前校验不通过绝不写入。
   - 验证：`pnpm test` 13 文件 / 59 测试通过；`pnpm build` 通过。
   - 文件选择（17）、匹配题文本（15）、校对行编辑（16）按工单范围留给后续。
+- 2026-11-26 · code-review 修复：`importFromFile` 的 Excel 路径补上 0 题明确报错，避免只有表头的工作簿生成绿色空草稿。

@@ -25,3 +25,4 @@
   - commit `5b1fbfa feat(question): 支持手动录入与题目列表`。
   - 验证：`pnpm test` 3 文件 / 6 测试通过；`pnpm build` 通过。
   - `QuestionForm` 做成可预填、可 `mode: create | edit` 的独立组件，供 05 / 06 / 16 复用；按设备的分组选择记在 `localStorage`，不进应用核心与备份。
+- 2026-11-26 · code-review 修复：分组页空状态补上「导入」入口并预选本组（spec 界面设计 · 分组页要求「导入」「录入」两个）。
