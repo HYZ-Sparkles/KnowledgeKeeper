@@ -3,6 +3,7 @@ import type { Core } from '../core';
 import type { GroupSummary, QuestionView } from '../core/types';
 import { navigate } from '../router';
 import Breadcrumb from './Breadcrumb';
+import Dialog from './Dialog';
 import { writeEntryGroupId } from './deviceState';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -13,13 +14,18 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export default function GroupView({
-  core, groupId, groups,
+  core, groupId, groups, refreshGroups, showToast,
 }: {
   core: Core;
   groupId: string;
   groups: GroupSummary[];
+  refreshGroups: () => Promise<void>;
+  showToast: (message: string) => void;
 }) {
   const [questions, setQuestions] = useState<QuestionView[] | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const [renameText, setRenameText] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const summary = groups.find((g) => g.group.id === groupId);
   const name = summary?.group.name ?? '分组';
 
@@ -37,6 +43,20 @@ export default function GroupView({
     navigate({ name: 'entry' });
   }
 
+  async function rename() {
+    await core.renameGroup(groupId, renameText);
+    await refreshGroups();
+    setRenaming(false);
+  }
+
+  async function remove() {
+    await core.deleteGroup(groupId);
+    navigate({ name: 'home' });
+    await refreshGroups();
+    setDeleting(false);
+    showToast(`已删除「${name}」`);
+  }
+
   return (
     <>
       <Breadcrumb trail={['我的题库', name]} />
@@ -46,6 +66,23 @@ export default function GroupView({
         总体正确率 {summary?.correctRate == null ? '尚未练习' : `${Math.round(summary.correctRate * 100)}%`}，
         今天到期 {summary?.dueCount ?? 0} 道。到期题排在最前面，最久到期的先出。
       </p>
+      <div className="toolbar">
+        <div className="grow" />
+        <button
+          className="btn btn-ghost"
+          type="button"
+          onClick={() => { setRenameText(name); setRenaming(true); }}
+        >
+          重命名
+        </button>
+        <button
+          className="btn btn-ghost btn-danger"
+          type="button"
+          onClick={() => setDeleting(true)}
+        >
+          删除分组
+        </button>
+      </div>
       <hr className="hairline" />
       {questions === null ? null : questions.length === 0 ? (
         <div className="flex flex-wrap items-center gap-[14px]">
@@ -59,16 +96,46 @@ export default function GroupView({
               <div className="row flex w-full items-baseline gap-[14px] py-[15px] text-left">
                 <span className="qtype">{TYPE_LABELS[question.type] ?? question.type}</span>
                 <span className="row-title flex-1 min-w-0">{question.stem}</span>
-                <span className="meta flex-none text-t13 text-faint num w-[152px] text-right">
+                <span className="meta flex-none text-t13_5 text-faint num w-[152px] text-right">
                   未排期
                 </span>
-                <span className="meta flex-none text-t13 text-mute num w-[74px] text-right">
+                <span className="meta flex-none text-t13_5 text-mute num w-[74px] text-right">
                   {question.correctCount} 对 {question.wrongCount} 错
                 </span>
               </div>
             </li>
           ))}
         </ul>
+      )}
+      {renaming && (
+        <Dialog
+          title="重命名分组"
+          message="改名只影响显示，题目和排期都不变。"
+          confirmLabel="保存"
+          confirmDisabled={!renameText.trim()}
+          onConfirm={() => void rename()}
+          onCancel={() => setRenaming(false)}
+        >
+          <label className="field">
+            <span>分组名</span>
+            <input
+              className="field-input w-full"
+              autoFocus
+              value={renameText}
+              onChange={(event) => setRenameText(event.target.value)}
+            />
+          </label>
+        </Dialog>
+      )}
+      {deleting && (
+        <Dialog
+          title="删除分组"
+          message={`删除「${name}」及其 ${summary?.questionCount ?? 0} 道题？不能撤销。`}
+          confirmLabel="删除分组"
+          destructive
+          onConfirm={() => void remove()}
+          onCancel={() => setDeleting(false)}
+        />
       )}
     </>
   );

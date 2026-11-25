@@ -36,8 +36,25 @@ export function memoryAdapter(): StorageAdapter {
     async putSchedule(id, s) { schedules.set(id, { ...s }); },
     async putAttempt(a) { attempts.set(a.id, { ...a }); },
     async putMeta(m) { meta = { ...m }; },
-    async deleteGroup(id) { groups.delete(id); },
-    async deleteQuestion(id) { questions.delete(id); },
+    // Mirror the IndexedDB adapter: deleting a question or group cascades.
+    async deleteGroup(id) {
+      groups.delete(id);
+      for (const question of questions.values()) {
+        if (question.groupId !== id) continue;
+        schedules.delete(question.id);
+        for (const [attemptId, attempt] of attempts) {
+          if (attempt.questionId === question.id) attempts.delete(attemptId);
+        }
+        questions.delete(question.id);
+      }
+    },
+    async deleteQuestion(id) {
+      questions.delete(id);
+      schedules.delete(id);
+      for (const [attemptId, attempt] of attempts) {
+        if (attempt.questionId === id) attempts.delete(attemptId);
+      }
+    },
     async deleteSchedule(id) { schedules.delete(id); },
     async clear() {
       groups.clear(); questions.clear(); schedules.clear(); attempts.clear();

@@ -22,6 +22,9 @@ export interface Core {
   createQuestion(input: QuestionInput, groupId: string): Promise<QuestionView>;
   listQuestions(groupId: string): Promise<QuestionView[]>;
   getQuestion(questionId: string): Promise<QuestionView>;
+  createGroup(name: string): Promise<Group>;
+  renameGroup(groupId: string, name: string): Promise<Group>;
+  deleteGroup(groupId: string): Promise<void>;
 }
 
 /**
@@ -89,6 +92,35 @@ export function createCore(deps: CoreDeps): Core {
     async getMeta(): Promise<LibraryMeta> {
       await ensureInitialized();
       return storage.getMeta();
+    },
+    async createGroup(name: string): Promise<Group> {
+      await ensureInitialized();
+      const trimmed = name.trim();
+      if (!trimmed) throw new Error('分组名不能为空');
+      const group: Group = {
+        id: generateId(random, 'g'),
+        name: trimmed,
+        createdAt: clock.now().toISOString(),
+      };
+      await storage.putGroup(group);
+      return group;
+    },
+    async renameGroup(groupId: string, name: string): Promise<Group> {
+      await ensureInitialized();
+      const trimmed = name.trim();
+      if (!trimmed) throw new Error('分组名不能为空');
+      const found = (await storage.getGroups()).find((g) => g.id === groupId);
+      if (!found) throw new Error('分组不存在');
+      const renamed = { ...found, name: trimmed };
+      await storage.putGroup(renamed);
+      return renamed;
+    },
+    async deleteGroup(groupId: string): Promise<void> {
+      await ensureInitialized();
+      const found = (await storage.getGroups()).find((g) => g.id === groupId);
+      if (!found) throw new Error('分组不存在');
+      // The storage adapter removes the group's questions, schedules and attempts.
+      await storage.deleteGroup(groupId);
     },
     async createQuestion(input: QuestionInput, groupId: string): Promise<QuestionView> {
       await ensureInitialized();

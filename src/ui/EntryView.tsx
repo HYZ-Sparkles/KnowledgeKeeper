@@ -2,18 +2,22 @@ import { useEffect, useState } from 'react';
 import type { Core } from '../core';
 import type { GroupSummary, QuestionInput } from '../core/types';
 import Breadcrumb from './Breadcrumb';
+import Dialog from './Dialog';
 import { defaultGroupId } from './entryGroups';
 import { readEntryGroupId, writeEntryGroupId } from './deviceState';
 import QuestionForm from './QuestionForm';
 
 export default function EntryView({
-  core, groups, showToast,
+  core, groups, showToast, refreshGroups,
 }: {
   core: Core;
   groups: GroupSummary[];
   showToast: (message: string) => void;
+  refreshGroups: () => Promise<void>;
 }) {
   const [groupId, setGroupId] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState('');
 
   useEffect(() => {
     if (groups.length === 0) return;
@@ -26,6 +30,13 @@ export default function EntryView({
   function changeGroup(id: string) {
     setGroupId(id);
     writeEntryGroupId(id);
+  }
+
+  async function createGroup() {
+    const group = await core.createGroup(newName);
+    await refreshGroups();
+    changeGroup(group.id);
+    setCreating(false);
   }
 
   async function save(input: QuestionInput) {
@@ -48,8 +59,29 @@ export default function EntryView({
           groups={groups}
           groupId={groupId}
           onGroupChange={changeGroup}
+          onRequestCreateGroup={() => { setNewName(''); setCreating(true); }}
           onSubmit={save}
         />
+      )}
+      {creating && (
+        <Dialog
+          title="新建分组"
+          message="起个名字，之后录入和导入时都能选中它。"
+          confirmLabel="创建"
+          confirmDisabled={!newName.trim()}
+          onConfirm={() => void createGroup()}
+          onCancel={() => setCreating(false)}
+        >
+          <label className="field">
+            <span>分组名</span>
+            <input
+              className="field-input w-full"
+              autoFocus
+              value={newName}
+              onChange={(event) => setNewName(event.target.value)}
+            />
+          </label>
+        </Dialog>
       )}
     </>
   );

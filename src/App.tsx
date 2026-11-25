@@ -55,12 +55,19 @@ export default function App({ core }: { core: Core }) {
           {effectiveRoute.name === 'home' ? (
             <HomeView groups={groups ?? []} meta={meta} />
           ) : effectiveRoute.name === 'entry' ? (
-            <EntryView core={core} groups={groups ?? []} showToast={showToast} />
+            <EntryView
+              core={core}
+              groups={groups ?? []}
+              showToast={showToast}
+              refreshGroups={refresh}
+            />
           ) : (
             <GroupView
               core={core}
               groupId={effectiveRoute.groupId}
               groups={groups ?? []}
+              refreshGroups={refresh}
+              showToast={showToast}
             />
           )}
         </main>

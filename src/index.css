@@ -82,6 +82,17 @@
            opacity-0 pointer-events-none transition-all duration-200 z-[60];
   }
   .toast.on { @apply opacity-100 translate-y-0; }
+  .dialog-backdrop {
+    @apply fixed inset-0 z-[70] flex items-start justify-center pt-[15vh]
+           bg-ink/25;
+  }
+  .dialog-panel {
+    @apply w-[min(440px,calc(100vw-32px))] rounded-4 border border-rule
+           bg-paper p-6;
+  }
+  .dialog-title { @apply text-[19px] font-semibold text-ink-2 m-0 mb-[10px]; }
+  .dialog-message { @apply text-[14px] leading-[1.7] text-mute m-0 mb-4; }
+  .dialog-actions { @apply flex justify-end gap-[10px] flex-wrap mt-5; }
 }
 
 /* Breakpoints per spec「壳」: ≤1180 narrow, ≤960 no right rail, ≤760 single column. */
