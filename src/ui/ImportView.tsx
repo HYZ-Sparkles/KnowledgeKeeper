@@ -11,6 +11,9 @@ import Dialog from './Dialog';
 import QuestionForm from './QuestionForm';
 import { readImportGroupId, writeImportGroupId } from './deviceState';
 import { defaultGroupId } from './entryGroups';
+import {
+  mergeDraftQuestions, normalizeAnswer,
+} from './mergeDraftQuestions';
 
 const TYPE_LABELS: Record<QuestionType, string> = {
   single: '单选题',
@@ -19,35 +22,12 @@ const TYPE_LABELS: Record<QuestionType, string> = {
   matching: '匹配题',
 };
 
-const TRUE_FALSE: Record<string, '√' | '×'> = {
-  '√': '√', '对': '√', '正确': '√', 'T': '√',
-  '×': '×', '错': '×', '错误': '×', 'F': '×',
-};
-
 const TRUE_FALSE_OPTIONS: Option[] = [
   { letter: '√', text: '正确' },
   { letter: '×', text: '错误' },
 ];
 
 let nextDraftId = 1;
-
-/** Option letters re-flow after a merge, beyond Z if needed. */
-function letterAt(index: number): string {
-  let rest = index;
-  let letters = '';
-  do {
-    letters = String.fromCharCode(65 + (rest % 26)) + letters;
-    rest = Math.floor(rest / 26) - 1;
-  } while (rest >= 0);
-  return letters;
-}
-
-/** Same normalization the core applies before writing: uppercase, no spaces. */
-function normalizeAnswer(raw: string, type: QuestionType): string {
-  const answer = raw.replace(/[\s　]+/g, '').toUpperCase();
-  if (type === 'truefalse') return TRUE_FALSE[answer] ?? answer;
-  return answer;
-}
 
 function answerMissing(question: DraftQuestion): boolean {
   if (question.type === 'matching') {
@@ -263,25 +243,7 @@ export default function ImportView({
       const second = previous[index + 1];
       if (!first || !second) return previous;
       if (first.type === 'matching' || second.type === 'matching') return previous;
-      const options: Option[] = [
-        ...first.options.map((option) => option.text),
-        ...second.options.map((option) => option.text),
-      ].map((text, position) => ({ letter: letterAt(position), text }));
-      const remap = (row: DraftQuestion) => {
-        const key = normalizeAnswer(row.answerText, row.type);
-        return [...key].flatMap((letter) => {
-          const position = row.options.findIndex((option) => option.letter === letter);
-          return position < 0 ? [] : [letterAt(position)];
-        });
-      };
-      const merged: DraftQuestion = {
-        ...first,
-        stem: `${first.stem}\n${second.stem}`,
-        options,
-        answerText: [...remap(first), ...remap(second)].join(''),
-        explanation: [first.explanation, second.explanation]
-          .filter(Boolean).join('\n'),
-      };
+      const merged = mergeDraftQuestions(first, second);
       const next = [...previous];
       next.splice(index, 2, { ...merged, missingAnswer: answerMissing(merged) });
       return next;
