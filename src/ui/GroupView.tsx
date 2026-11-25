@@ -4,7 +4,7 @@ import type { GroupSummary, QuestionView } from '../core/types';
 import { navigate } from '../router';
 import Breadcrumb from './Breadcrumb';
 import Dialog from './Dialog';
-import { writeEntryGroupId } from './deviceState';
+import { writeEntryGroupId, writeImportGroupId } from './deviceState';
 import {
   localDayString, scheduleIsDue, scheduleRowText,
 } from './scheduleCopy';
@@ -55,6 +55,11 @@ export default function GroupView({
   function goToEntry() {
     writeEntryGroupId(groupId);
     navigate({ name: 'entry' });
+  }
+
+  function goToImport() {
+    writeImportGroupId(groupId);
+    navigate({ name: 'import' });
   }
 
   async function rename() {
@@ -167,7 +172,10 @@ export default function GroupView({
             {favoriteOnly ? '这一组还没有收藏的题。' : '这一组还没有题。'}
           </p>
           {!favoriteOnly && (
-            <button className="btn" type="button" onClick={goToEntry}>录入</button>
+            <>
+              <button className="btn" type="button" onClick={goToImport}>导入</button>
+              <button className="btn" type="button" onClick={goToEntry}>录入</button>
+            </>
           )}
         </div>
       ) : (
