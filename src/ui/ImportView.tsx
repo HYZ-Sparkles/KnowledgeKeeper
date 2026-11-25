@@ -2,8 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import type { Core } from '../core';
 import type {
-  DraftQuestion, GroupSummary, Option, QuestionInput, QuestionType,
-  ReviewDraft, SubQuestion,
+  DraftQuestion, GroupSummary, Option, QuestionInput, ReviewDraft, SubQuestion,
 } from '../core/types';
 import { navigate } from '../router';
 import Breadcrumb from './Breadcrumb';
@@ -11,16 +10,10 @@ import Dialog from './Dialog';
 import QuestionForm from './QuestionForm';
 import { readImportGroupId, writeImportGroupId } from './deviceState';
 import { defaultGroupId } from './entryGroups';
+import { TYPE_LABELS } from './labels';
 import {
   mergeDraftQuestions, normalizeAnswer,
 } from './mergeDraftQuestions';
-
-const TYPE_LABELS: Record<QuestionType, string> = {
-  single: '单选题',
-  multiple: '多选题',
-  truefalse: '判断题',
-  matching: '匹配题',
-};
 
 const TRUE_FALSE_OPTIONS: Option[] = [
   { letter: '√', text: '正确' },

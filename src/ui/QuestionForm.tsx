@@ -2,6 +2,7 @@ import {
   useEffect, useState, type FormEvent, type ReactNode,
 } from 'react';
 import type { GroupSummary, QuestionInput, QuestionType } from '../core/types';
+import { TYPE_LABELS } from './labels';
 
 export interface QuestionFormProps {
   mode: 'create' | 'edit';
@@ -32,13 +33,6 @@ interface FormState {
   subs: SubFormState[];
   explanation: string;
 }
-
-const TYPE_LABELS: Record<string, string> = {
-  single: '单选题',
-  multiple: '多选题',
-  truefalse: '判断题',
-  matching: '匹配题',
-};
 
 const TRUE_FALSE_OPTIONS = [
   { letter: '√', text: '正确' },

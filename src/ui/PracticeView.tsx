@@ -3,16 +3,10 @@ import type { Core } from '../core';
 import type { GroupSummary, RoundItem, SubmitResult } from '../core/types';
 import { navigate } from '../router';
 import Breadcrumb from './Breadcrumb';
+import { TYPE_LABELS } from './labels';
 import {
   localDayString, scheduleConsequence, scheduleIsDue, scheduleLabel,
 } from './scheduleCopy';
-
-const TYPE_LABELS: Record<string, string> = {
-  single: '单选题',
-  multiple: '多选题',
-  truefalse: '判断题',
-  matching: '匹配题',
-};
 
 function formatLetters(letters: readonly string[]): string {
   return letters.join(' ');
@@ -216,7 +210,7 @@ export default function PracticeView({
               onClick={leave}>退出练习</button>
           </div>
           <div className="qlabel">
-            <span className="qtype">{TYPE_LABELS[item.type] ?? item.type}</span>
+            <span className="qtype">{TYPE_LABELS[item.type]}</span>
             <span className="num">
               {scheduleLabel(
                 item.schedule, item.correctCount, item.wrongCount,

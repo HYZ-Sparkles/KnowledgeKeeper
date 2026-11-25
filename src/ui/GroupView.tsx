@@ -5,16 +5,10 @@ import { navigate } from '../router';
 import Breadcrumb from './Breadcrumb';
 import Dialog from './Dialog';
 import { writeEntryGroupId, writeImportGroupId } from './deviceState';
+import { TYPE_LABELS } from './labels';
 import {
   localDayString, scheduleIsDue, scheduleRowText,
 } from './scheduleCopy';
-
-const TYPE_LABELS: Record<string, string> = {
-  single: '单选题',
-  multiple: '多选题',
-  truefalse: '判断题',
-  matching: '匹配题',
-};
 
 /** The eight fixed ticks of the schedule distribution, in core order. */
 const RULER_TICKS = [
@@ -189,7 +183,7 @@ export default function GroupView({
                   name: 'question', questionId: question.id,
                 })}
               >
-                <span className="qtype">{TYPE_LABELS[question.type] ?? question.type}</span>
+                <span className="qtype">{TYPE_LABELS[question.type]}</span>
                 <span className="row-title flex-1 min-w-0">{question.stem}</span>
                 <span className={`meta flex-none text-t13_5 num w-[152px] text-right ${
                   scheduleIsDue(question.schedule, today) ? 'text-orange' : 'text-faint'

@@ -6,15 +6,9 @@ import type {
 import { navigate } from '../router';
 import Breadcrumb from './Breadcrumb';
 import Dialog from './Dialog';
+import { TYPE_LABELS } from './labels';
 import QuestionForm from './QuestionForm';
 import { localDayString, scheduleRowText } from './scheduleCopy';
-
-const TYPE_LABELS: Record<string, string> = {
-  single: '单选题',
-  multiple: '多选题',
-  truefalse: '判断题',
-  matching: '匹配题',
-};
 
 /** The group list row opens here; the form is the same one used for entry. */
 export default function QuestionPage({
@@ -94,7 +88,7 @@ export default function QuestionPage({
       <Breadcrumb trail={['我的题库', groupName, '题目']} />
       <h1 className="text-t40 font-bold text-ink-2 mb-3 tracking-[-.3px]">编辑题目</h1>
       <p className="flex flex-wrap items-center gap-[10px] text-t13_5 text-mute m-0">
-        <span>{TYPE_LABELS[question.type] ?? question.type}</span>
+        <span>{TYPE_LABELS[question.type]}</span>
         <span>·</span>
         <span>{scheduleRowText(question.schedule, today)}</span>
         <span>·</span>
