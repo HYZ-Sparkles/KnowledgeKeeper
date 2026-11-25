@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Core } from '../core';
 import type {
-  DraftQuestion, GroupSummary, QuestionType, ReviewDraft,
+  DraftQuestion, GroupSummary, Option, QuestionType, ReviewDraft, SubQuestion,
 } from '../core/types';
 import { navigate } from '../router';
 import Breadcrumb from './Breadcrumb';
@@ -29,11 +29,43 @@ function normalizeAnswer(raw: string, type: QuestionType): string {
 }
 
 function answerMissing(question: DraftQuestion): boolean {
+  if (question.type === 'matching') {
+    const shared = question.sharedOptions ?? [];
+    const subs = question.subQuestions ?? [];
+    if (shared.length < 2 || subs.length === 0) return true;
+    const allowed = new Set(shared.map((option) => option.letter));
+    return subs.some((sub) => sub.answer.length === 0
+      || sub.answer.some((letter) => !allowed.has(letter))
+      || (sub.type === 'single' && sub.answer.length !== 1)
+      || (sub.type === 'multiple' && sub.answer.length < 2));
+  }
   const answer = normalizeAnswer(question.answerText, question.type);
   if (!answer) return true;
   if (question.type === 'truefalse') return answer !== '√' && answer !== '×';
   const letters = new Set(question.options.map((option) => option.letter));
   return [...answer].some((letter) => !letters.has(letter));
+}
+
+/** Keep the editable answer box and the per-sub-question answers in sync. */
+function splitMatchingAnswer(
+  raw: string, subs: SubQuestion[],
+): SubQuestion[] {
+  const bySub = new Map<number, string>();
+  for (const match of raw.matchAll(/(\d+)\s*[:：.、]?\s*([A-Ja-j]+)/g)) {
+    bySub.set(Number(match[1]), match[2].toUpperCase());
+  }
+  return subs.map((sub, index) => ({
+    ...sub,
+    answer: [...(bySub.get(index + 1) ?? '')].filter((letter) => /^[A-J]$/.test(letter)),
+  }));
+}
+
+function matchingOptionsLine(
+  shared: Option[] | null | undefined, subs: SubQuestion[] | null | undefined,
+): string {
+  const list = (shared ?? []).map((option) =>
+    `${option.letter} ${option.text}`).join('　');
+  return `共用选项 ${list} · ${subs?.length ?? 0} 个子题`;
 }
 
 export default function ImportView({
@@ -222,10 +254,12 @@ export default function ImportView({
                       {row.stem}
                     </div>
                     <div className="optsline">
-                      {row.type === 'truefalse'
-                        ? '（无选项，判断题固定「正确 / 错误」）'
-                        : row.options.map((option) =>
-                          `${option.letter}. ${option.text}`).join('　')}
+                      {row.type === 'matching'
+                        ? matchingOptionsLine(row.sharedOptions, row.subQuestions)
+                        : row.type === 'truefalse'
+                          ? '（无选项，判断题固定「正确 / 错误」）'
+                          : row.options.map((option) =>
+                            `${option.letter}. ${option.text}`).join('　')}
                     </div>
                   </div>
                   <input
@@ -233,9 +267,21 @@ export default function ImportView({
                     aria-label={`第 ${index + 1} 题答案`}
                     placeholder="缺答案"
                     value={row.answerText}
-                    onChange={(event) => updateRow(index, {
-                      answerText: normalizeAnswer(event.target.value, row.type),
-                    })}
+                    onChange={(event) => {
+                      const raw = event.target.value;
+                      if (row.type === 'matching') {
+                        const upper = raw.toUpperCase();
+                        updateRow(index, {
+                          answerText: upper,
+                          subQuestions: splitMatchingAnswer(
+                            upper, row.subQuestions ?? []),
+                        });
+                      } else {
+                        updateRow(index, {
+                          answerText: normalizeAnswer(raw, row.type),
+                        });
+                      }
+                    }}
                   />
                   <div className="acts">
                     <button

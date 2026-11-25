@@ -4,7 +4,9 @@ import type {
   RoundItem, SubmittedAnswer, SubmitResult, SubQuestionResult,
   ListQuestionsOptions, ReviewDraft,
 } from './types';
-import { draftAnswer, parseText, trueFalseOptions } from './internal/parseText';
+import {
+  draftAnswer, matchingDraftAnswer, parseText, trueFalseOptions,
+} from './internal/parseText';
 import { grade, gradeMatching } from './internal/grade';
 import { buildRound } from './internal/round';
 import { advance, localDay } from './internal/schedule';
@@ -96,6 +98,23 @@ export function createCore(deps: CoreDeps): Core {
       const inputs: QuestionInput[] = draft.questions.map((question, index) => {
         if (!question.stem.trim()) {
           throw new Error(`第 ${index + 1} 题题干不能为空`);
+        }
+        if (question.type === 'matching') {
+          if (!matchingDraftAnswer(question)) {
+            throw new Error(`第 ${index + 1} 题答案缺失或不在选项范围内`);
+          }
+          return {
+            type: 'matching',
+            stem: question.stem.trim(),
+            options: [],
+            answer: [],
+            explanation: question.explanation,
+            sharedOptions: (question.sharedOptions ?? [])
+              .map((option) => ({ ...option })),
+            subQuestions: (question.subQuestions ?? []).map((sub) => ({
+              ...sub, answer: [...sub.answer],
+            })),
+          };
         }
         const { answer, valid } = draftAnswer(question);
         if (!valid) {
