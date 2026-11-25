@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowledge Keeper｜今天到期 9 道</title>
+<style>
+:root{
+  --paper:#FDFAF5; --paper2:#F6F1E7; --rule:#E6E0D6; --rule-soft:#F0EAE0;
+  --ink:#2C2827; --ink2:#4B351E; --mute:#6F6254; --faint:#7E7162;
+  --amber:#9E5A2C; --orange:#A94E15; --orange-fill:#D37035; --blue:#326CE5; --blue-ink:#1E48DA;
+  --green:#3E7A4E; --green-wash:#E7F5E9; --red:#B23A2A; --red-wash:#FBE6E1;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);color:var(--ink);
+  font:400 16px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.num{font-variant-numeric:tabular-nums}
+.col{max-width:680px;margin:0 auto;padding:0 28px}
+
+/* top bar */
+.top{height:64px;display:flex;align-items:center;border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--paper);z-index:20}
+.top .col{display:flex;align-items:center;gap:10px;width:100%}
+.brand{display:flex;align-items:center;gap:8px;font-size:15.5px;font-weight:600;color:var(--ink2);letter-spacing:-.1px;white-space:nowrap}
+.top .right{margin-left:auto;font-size:13px;color:var(--mute);display:flex;align-items:center;gap:12px}
+.top .right b{color:var(--orange);font-weight:600}
+.pdot{width:4px;height:4px;border-radius:50%;background:var(--faint)}
+
+
+/* views */
+.view{display:none;padding:44px 0 140px}
+.view.on{display:block}
+
+/* home */
+.eyebrow{font-size:13.5px;color:var(--mute);letter-spacing:.4px}
+h1{font-size:46px;line-height:1.2;font-weight:700;color:var(--ink2);margin:10px 0 12px;letter-spacing:-.6px}
+h1 .u{color:var(--orange)}
+.lede{font-size:16px;color:var(--mute);margin:0 0 26px;max-width:44ch}
+.cta{display:flex;gap:12px;align-items:center;margin-bottom:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:50px;padding:0 24px;border-radius:3px;font-size:16px;background:var(--paper);border:1px solid var(--rule);color:var(--ink)}
+.btn:hover{border-color:var(--amber);color:var(--amber)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:500}
+.btn.primary:hover{background:#2A5FD0;border-color:#2A5FD0;color:#fff}
+.btn.primary:disabled{background:#CBD6E8;border-color:#CBD6E8;color:#fff;cursor:default}
+.btn.big{height:54px;padding:0 30px;font-size:16.5px}
+.btn.ghost{border-color:transparent;color:var(--amber);padding:0 4px;height:auto}
+
+.groups{margin-top:34px;border-top:1px solid var(--rule)}
+.g{display:flex;align-items:center;gap:16px;width:100%;padding:20px 0;border-bottom:1px solid var(--rule)}
+.g .name{font-size:19px;color:var(--ink2);font-weight:500}
+.g .meta{font-size:13.5px;color:var(--mute);margin-top:3px}
+.g .side{margin-left:auto;text-align:right;font-size:13.5px;color:var(--mute)}
+.g .side .due{color:var(--orange);font-size:15px;font-weight:600;display:block;line-height:1.4}
+.g .side .none{color:var(--faint)}
+.g:hover .name{color:var(--amber)}
+.g .arrow{color:#B3A695;font-size:14px;margin-left:6px}
+.week{margin:4px 0 30px;display:flex;gap:2px;max-width:392px;border-bottom:1px solid var(--rule);padding-bottom:10px}
+.week .day{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px}
+.week .plot{height:50px;display:flex;align-items:flex-end;justify-content:center;width:100%}
+.week .plot i{display:block;width:3px;background:#D8CDBE;border-radius:1px}
+.week .day.now .plot i{background:var(--orange-fill);width:4px}
+.week .day span{font-size:11.5px;color:var(--faint);line-height:1}
+.week .day.now span{color:var(--orange);font-weight:600}
+.week .day b{font-size:12.5px;color:var(--mute);font-variant-numeric:tabular-nums;font-weight:500;line-height:1;margin-top:-2px}
+.week .day.now b{color:var(--orange);font-weight:600}
+.week .day.zero b{color:#8F8270}
+.week-h{font-size:12.5px;color:var(--mute);margin-bottom:10px}
+
+.footnote{margin-top:34px;font-size:13.5px;color:var(--mute);display:flex;flex-wrap:wrap;gap:18px;align-items:center}
+.footnote button{color:var(--amber)}
+.footnote button:hover{text-decoration:underline}
+
+/* practice */
+.squares{display:flex;gap:5px;margin:0 0 34px}
+.squares i{width:9px;height:9px;border:1px solid #D8CDBE;border-radius:1px;display:block}
+.squares i.done{background:var(--orange);border-color:var(--orange)}
+.squares i.cur{border-color:var(--blue);background:var(--blue)}
+#v-practice .col{min-height:calc(100vh - 64px - 76px);display:flex;flex-direction:column;justify-content:center;padding-top:20px;padding-bottom:120px}
+.phead{display:flex;align-items:baseline;gap:12px;font-size:13.5px;color:var(--mute);margin-bottom:26px}
+.phead .q{color:var(--ink2);font-weight:600;font-size:14px}
+.phead .due{color:var(--orange)}
+.phead .late{color:var(--red)}
+.qt{font-size:13px;color:var(--mute);border:1px solid var(--rule);border-radius:2px;padding:1px 7px;margin-right:8px}
+.stem{font-size:29px;line-height:1.55;font-weight:500;color:var(--ink2);margin:0 0 4px;letter-spacing:-.2px}
+.opts{list-style:none;margin:26px 0 0;padding:0;border-top:1px solid var(--rule)}
+.opt{display:flex;align-items:center;gap:16px;width:100%;padding:17px 12px 17px 6px;border-bottom:1px solid var(--rule);min-height:60px}
+.opt .box{flex:none;width:26px;height:26px;border:1px solid #B3A695;border-radius:2px;display:grid;place-items:center;font-size:13.5px;color:var(--mute);font-weight:600;transition:.12s}
+.opt .tx{font-size:17px;line-height:1.5}
+.opt:hover .box{border-color:var(--blue);color:var(--blue)}
+.opt.sel .box{background:var(--blue);border-color:var(--blue);color:#fff}
+.opt.sel{background:var(--paper2)}
+.opt.ok .box{background:var(--green);border-color:var(--green);color:#fff}
+.opt.no .box{background:var(--red);border-color:var(--red);color:#fff}
+.opt .tag{margin-left:auto;font-size:13px;color:var(--green);flex:none}
+.opt .tag.bad{color:var(--red)}
+.exp{display:none;margin-top:26px;padding:18px 20px;background:var(--paper2);border-left:2px solid var(--rule)}
+.exp.on{display:block}
+.exp h4{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--mute);letter-spacing:.6px}
+.exp p{margin:0;font-size:15px;line-height:1.8;color:var(--ink)}
+
+/* matching */
+.shared{margin-top:24px;padding:16px 18px;background:var(--paper2)}
+.shared h4{margin:0 0 10px;font-size:13px;color:var(--mute);font-weight:600}
+.shared .row{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:15px}
+.shared .row span b{color:var(--amber);margin-right:5px}
+.subs{list-style:none;margin:26px 0 0;padding:0;border-top:1px solid var(--rule)}
+.sub{padding:18px 0;border-bottom:1px solid var(--rule)}
+.sub .q{font-size:16.5px;line-height:1.55;margin-bottom:12px;display:flex;gap:10px;align-items:baseline}
+.sub .q i{font-style:normal;font-size:13px;color:var(--faint);width:16px;flex:none}
+.sub .chips{display:flex;gap:8px;flex-wrap:wrap;padding-left:26px}
+.chip{min-width:46px;height:44px;border:1px solid #B3A695;border-radius:2px;font-size:14.5px;display:grid;place-items:center;color:var(--ink)}
+.chip:hover{border-color:var(--blue)}
+.chip.sel{background:var(--blue);border-color:var(--blue);color:#fff}
+.chip.ok{border-color:var(--green);background:var(--green-wash);color:var(--green)}
+.chip.no{border-color:var(--red);background:var(--red-wash);color:var(--red);text-decoration:line-through}
+.chip:disabled{cursor:default}
+
+/* bottom band */
+.band{position:fixed;left:0;right:0;bottom:0;height:76px;background:var(--paper);border-top:1px solid var(--rule);display:none;z-index:25;transition:background .18s,border-color .18s}
+.band.on{display:block}
+.band .col{height:100%;display:flex;align-items:center;gap:16px}
+.band .hint{font-size:13.5px;color:var(--mute);flex:1}
+.band .verdict{font-size:16px;font-weight:600;flex:1;color:var(--green)}
+.band .verdict small{display:block;font-size:13px;font-weight:400;color:var(--mute);margin-top:2px}
+.band.good{background:var(--green-wash);border-top-color:#C7E4CC}
+.band.bad{background:var(--red-wash);border-top-color:#EFC9C1}
+.band.bad .verdict{color:var(--red)}
+.band .next{flex:none}
+.band.good .next .btn{border-color:#BCDCC3;color:var(--green)}
+.band.bad .next .btn{border-color:#EBC0B7;color:var(--red)}
+.band.good .next .btn:hover,.band.bad .next .btn:hover{background:#fff}
+
+/* import */
+.paste{width:100%;height:220px;border:1px solid var(--rule);background:#fff;padding:16px 18px;font:400 14px/1.9 ui-monospace,SFMono-Regular,Menlo,Consolas,"Noto Sans Mono CJK SC",monospace;color:var(--ink);resize:vertical;margin:0 0 18px}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:13.5px;color:var(--mute);margin-bottom:7px}
+.select,.input{width:100%;height:48px;border:1px solid var(--rule);background:#fff;border-radius:3px;padding:0 14px;font:inherit;font-size:16px;color:var(--ink)}
+.select:focus,.input:focus,textarea:focus{outline:2px solid #D8E2F8;border-color:var(--blue)}
+.warn{display:flex;gap:12px;align-items:flex-start;padding:16px 18px;background:#FBEBDD;border-left:2px solid var(--orange);font-size:15px;line-height:1.6;color:#8C4E1D;margin-bottom:8px}
+.warn b{color:#7A3F13}
+.rev{padding:20px 0;border-bottom:1px solid var(--rule)}
+.rev:first-child{border-top:1px solid var(--rule)}
+.rev .top-line{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+.rev .no{font-size:13px;color:var(--faint);font-variant-numeric:tabular-nums;width:20px;flex:none}
+.rev .stem{font-size:16px;line-height:1.6;margin-bottom:6px}
+.rev .optsline{font-size:13.5px;color:var(--mute);line-height:1.75;margin-bottom:12px}
+.rev .ansrow{display:flex;align-items:center;gap:12px}
+.rev .ansrow label{font-size:13px;color:var(--mute);flex:none}
+.rev .ans{height:44px;width:130px;border:1px solid var(--rule);border-radius:3px;padding:0 10px;font:inherit;font-size:15px;background:#fff;color:var(--ink);text-align:center;letter-spacing:2px}
+.rev .ans.miss{border-color:var(--red);background:#FDF1EE;color:var(--red);letter-spacing:0}
+.rev .ans.miss::placeholder{color:var(--red);font-size:13px}
+.rev .acts{margin-left:auto;display:flex;gap:16px;font-size:13px;color:var(--mute)}
+.rev .acts button:hover{color:var(--orange)}
+.rev .acts .del:hover{color:var(--red)}
+
+/* backup */
+.panel{padding:26px 0;border-bottom:1px solid var(--rule)}
+.panel:first-of-type{border-top:1px solid var(--rule);margin-top:30px}
+.panel h2{font-size:20px;font-weight:600;color:var(--ink2);margin:0 0 8px}
+.panel p{font-size:15px;line-height:1.8;color:var(--mute);margin:0 0 18px;max-width:46ch}
+.stat{display:flex;gap:44px;margin:0 0 22px}
+.stat div{font-size:13.5px;color:var(--mute)}
+.stat b{display:block;font-size:26px;color:var(--ink2);font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+.install{padding:18px 20px;background:var(--paper2);font-size:14.5px;line-height:1.8;color:var(--mute)}
+.install b{color:var(--ink2)}
+.toast{position:fixed;left:50%;bottom:100px;transform:translate(-50%,10px);background:#2C2827;color:#FDFAF5;font-size:14px;padding:12px 20px;border-radius:3px;opacity:0;transition:.2s;z-index:60;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media(max-width:640px){
+  h1{font-size:34px}
+  .stem{font-size:23px}
+  .col{padding:0 18px}
+  .view{padding:28px 0 130px}
+  .band{height:72px}
+  .rev .ansrow{flex-wrap:wrap}
+  .rev .acts{margin-left:0;width:100%}
+}
+</style>
+</head>
+<body data-view="home">
+
+
+<header class="top">
+  <div class="col">
+    <button class="brand" data-go="home">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="2.5" y="6.5" width="12" height="14" rx="2" stroke="#4B351E" stroke-width="1.6"/>
+        <path d="M6.5 3.5h13v14" stroke="#D37035" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      Knowledge Keeper
+    </button>
+    <div class="right">
+      <span>10 月 14 日 星期二</span><span id="topRight">到期 <b class="num">9</b></span>
+      <i class="pdot"></i>
+      <button data-go="backup" style="color:var(--mute)">备份</button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ HOME ============ -->
+<section class="view on" id="v-home">
+  <div class="col">
+    <div class="eyebrow">星期二 · 10 月 14 日</div>
+    <h1>今天到期 9 道</h1>
+    <p class="lede">四个分组里的错题，按 1、2、4、7、15、30 天的间隔到期。到期的最久排在前面。</p>
+
+    <div class="week-h">接下来七天还会到期</div>
+    <div class="week">
+      <div class="day now"><div class="plot"><i style="height:46px"></i></div><b>9</b><span>今天</span></div>
+      <div class="day"><div class="plot"><i style="height:20px"></i></div><b>4</b><span>三</span></div>
+      <div class="day"><div class="plot"><i style="height:10px"></i></div><b>2</b><span>四</span></div>
+      <div class="day zero"><div class="plot"><i style="height:2px"></i></div><b>0</b><span>五</span></div>
+      <div class="day"><div class="plot"><i style="height:5px"></i></div><b>1</b><span>六</span></div>
+      <div class="day zero"><div class="plot"><i style="height:2px"></i></div><b>0</b><span>日</span></div>
+      <div class="day"><div class="plot"><i style="height:15px"></i></div><b>3</b><span>一</span></div>
+    </div>
+
+    <div class="cta">
+      <button class="btn primary big" data-go="practice">开始练习</button>
+      <button class="btn ghost" data-go="import">导入题目</button>
+      <button class="btn ghost" data-go="entry">录入一道题</button>
+    </div>
+
+    <div class="groups">
+      <button class="g" data-go="practice">
+        <div>
+          <div class="name">错题集</div>
+          <div class="meta">12 题，正确率 68%</div>
+        </div>
+        <div class="side">
+          <span class="due">到期 4</span>
+        </div>
+      </button>
+      <button class="g" data-go="practice">
+        <div>
+          <div class="name">计算机组成原理</div>
+          <div class="meta">10 题，正确率 76%</div>
+        </div>
+        <div class="side">
+          <span class="due">到期 3</span>
+        </div>
+      </button>
+      <button class="g" data-go="practice">
+        <div>
+          <div class="name">教育心理学</div>
+          <div class="meta">21 题，正确率 81%</div>
+        </div>
+        <div class="side">
+          <span class="none">没有到期的</span>
+        </div>
+      </button>
+      <button class="g" data-go="practice">
+        <div>
+          <div class="name">英语长难句</div>
+          <div class="meta">9 题，正确率 55%</div>
+        </div>
+        <div class="side">
+          <span class="due">到期 2</span>
+        </div>
+      </button>
+    </div>
+
+    <div class="footnote">
+      <span>上次备份 3 天前</span>
+      <i class="pdot"></i>
+      <button data-go="backup">备份到文件</button>
+      <button data-go="backup">装到主屏幕</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRACTICE ============ -->
+<section class="view" id="v-practice">
+  <div class="col">
+    <div class="phead">
+      <span class="q">计算机组成原理</span>
+      <span class="qt" id="pType">单选题</span>
+      <span class="num">第 3 / 10</span>
+      <span class="due">第 3 个间隔</span><span class="late">逾期 2 天</span>
+    </div>
+    <div class="squares" id="squares"></div>
+
+    <div id="pSingle">
+      <p class="stem">在 8 位补码表示中，能表示的最小整数是</p>
+      <ul class="opts" id="pOpts"></ul>
+      <div class="exp" id="pExp">
+        <h4>解析</h4>
+        <p>8 位补码的表示范围是 −128 ~ +127。−128 由 1000 0000 表示，没有对应的正数——这是补码比原码多出一个负数的原因。</p>
+      </div>
+    </div>
+
+    <div id="pMatch" style="display:none">
+      <p class="stem">把下列术语与它的编码方式对应起来</p>
+      <div class="shared">
+        <h4>共用选项</h4>
+        <div class="row">
+          <span><b>A</b>原码</span><span><b>B</b>反码</span><span><b>C</b>补码</span><span><b>D</b>移码</span>
+        </div>
+      </div>
+      <ul class="subs" id="subs"></ul>
+      <div class="exp" id="mExp">
+        <h4>解析</h4>
+        <p>0 在原码和反码里有 +0 / −0 两种写法；补码把 −0 的位置让给了 −128，所以表示范围最大；移码把补码的符号位取反，正好可以按无符号数比较大小，因此用于阶码。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ IMPORT ============ -->
+<section class="view" id="v-import">
+  <div class="col">
+    <div class="eyebrow">导入</div>
+    <h1 style="font-size:36px">把题交进来</h1>
+    <p class="lede">PDF、Word、Excel，或者从网页复制的文本。解析结果先进校对，改完再写进分组。</p>
+
+    <div id="step1">
+      <textarea class="paste">1. 在 8 位补码表示中，能表示的最小整数是
+A. −128　B. −127　C. −256　D. 127
+答案：A
+解析：8 位补码的范围是 −128 ~ +127。
+
+2. 下列关于 IEEE 754 单精度浮点数的说法，正确的有
+A. 符号位 1 位　B. 阶码 8 位，采用移码　C. 尾数 23 位，隐含最高位 1　D. 能精确表示 0.1
+答案：ABC
+
+3. 补码的减法运算可以转换为加法运算。
+答案：√
+
+4. 把下列术语与它的编码方式对应起来
+共用选项：A 原码　B 反码　C 补码　D 移码
+1. 0 有两种表示形式的是（多选）
+2. 表示范围最大的是（单选）
+答案：1 AB　2 C</textarea>
+      <div class="field">
+        <label>放进哪个分组</label>
+        <select class="select">
+          <option>错题集</option>
+          <option selected>计算机组成原理</option>
+          <option>教育心理学</option>
+          <option>英语长难句</option>
+          <option>＋ 新建分组</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <button class="btn" id="pickFile">选择文件</button>
+        <button class="btn primary" id="toReview">开始校对</button>
+        <span style="font-size:13.5px;color:var(--mute)">识别到 12 道题</span>
+      </div>
+    </div>
+
+    <div id="step2" style="display:none">
+      <div class="warn">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" style="flex:none;margin-top:3px"><path d="M8 2.2 14.4 13.4H1.6z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6.4v3.2M8 11.6v.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <span>识别到 <b class="num">12</b> 道题，答案 <b class="num">11</b> 个。<br>第 7 题缺答案，补上才能写入。</span>
+      </div>
+      <div id="revList"></div>
+      <div style="margin-top:22px"><button class="btn ghost" id="cancelReview">← 重新粘贴</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ENTRY ============ -->
+<section class="view" id="v-entry">
+  <div class="col">
+    <div class="eyebrow">录入</div>
+    <h1 style="font-size:36px">录入一道题</h1>
+    <p class="lede">文件里没有的题用这里补。录入和编辑都不改动任何已有题目的排期。</p>
+    <div class="field">
+      <label>题型</label>
+      <select class="select"><option>单选题</option><option>多选题</option><option>判断题</option><option>匹配题</option></select>
+    </div>
+    <div class="field">
+      <label>分组</label>
+      <select class="select"><option>计算机组成原理</option><option>错题集</option><option>教育心理学</option><option>英语长难句</option></select>
+    </div>
+    <div class="field">
+      <label>题干</label>
+      <input class="input" placeholder="例如：定点数补码算术右移一位时，符号位如何处理？">
+    </div>
+    <div class="field">
+      <label>选项</label>
+      <div style="display:grid;gap:10px">
+        <div style="display:flex;gap:10px;align-items:center"><span style="width:16px;color:var(--mute)">A</span><input class="input"><button class="chip" style="flex:none">正确</button></div>
+        <div style="display:flex;gap:10px;align-items:center"><span style="width:16px;color:var(--mute)">B</span><input class="input"><button class="chip" style="flex:none">正确</button></div>
+        <div style="display:flex;gap:10px;align-items:center"><span style="width:16px;color:var(--mute)">C</span><input class="input"><button class="chip" style="flex:none">正确</button></div>
+        <div style="display:flex;gap:10px;align-items:center"><span style="width:16px;color:var(--mute)">D</span><input class="input"><button class="chip" style="flex:none">正确</button></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>解析（可空）</label>
+      <textarea class="paste" style="height:90px;font-family:inherit;font-size:16px;line-height:1.7" placeholder="练习时会显示在判定下面"></textarea>
+    </div>
+    <button class="btn primary">保存到题库</button>
+  </div>
+</section>
+
+<!-- ============ BACKUP ============ -->
+<section class="view" id="v-backup">
+  <div class="col">
+    <div class="eyebrow">备份与恢复</div>
+    <h1 style="font-size:36px">题库只在这台设备上</h1>
+    <p class="lede">没有账号，也不上传。浏览器清理存储时，只有这个 JSON 文件能把它找回来。</p>
+    <div class="stat">
+      <div>上次备份<b>3 天前</b></div>
+      <div>题目<b class="num">52</b></div>
+      <div>作答记录<b class="num">214</b></div>
+    </div>
+    <div class="panel" style="border-top:1px solid var(--rule)">
+      <h2>导出备份</h2>
+      <p>一个 JSON 文件，包含分组、题目、作答、排期和收藏。导出后会更新「上次备份」的时间。</p>
+      <button class="btn primary" id="doBackup">导出备份文件</button>
+    </div>
+    <div class="panel">
+      <h2>从备份恢复</h2>
+      <p>整库替换。当前的分组、题目和作答记录都会消失，不能撤销。</p>
+      <button class="btn" id="doRestore">选择备份文件</button>
+    </div>
+    <div class="panel" style="border-bottom:0">
+      <h2>装到 iPad 主屏幕</h2>
+      <div class="install">在 Safari 里点「分享」，选<b>添加到主屏幕</b>。从桌面图标打开是全屏无地址栏的，也不会被 Safari 按 7 天未访问清理存储。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BANDS ============ -->
+<div class="band" id="band-practice">
+  <div class="col">
+    <div class="hint" id="bandHint">选一个选项再提交</div>
+    <div class="verdict" id="bandVerdict" style="display:none"></div>
+    <button class="btn primary" id="submitBtn" disabled>提交</button>
+    <button class="btn" id="nextBtn" style="display:none">下一题</button>
+  </div>
+</div>
+<div class="band" id="band-import">
+  <div class="col">
+    <div class="hint">写入后不能自动撤销，但可以删分组重来</div>
+    <button class="btn primary" id="commit">写入 12 道题</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const body = document.body;
+const VIEWS = ['home','practice','import','entry','backup'];
+function go(v){
+  body.dataset.view = v;
+  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on', s.id==='v-'+v));
+  document.getElementById('band-practice').classList.toggle('on', v==='practice');
+  document.getElementById('band-import').classList.toggle('on', v==='import' && step2Visible());
+  try{history.replaceState(null,'','#'+v)}catch(e){}
+  window.scrollTo({top:0});
+}
+document.addEventListener('click', e=>{
+  const t = e.target.closest('[data-go]');
+  if(!t) return;
+  e.preventDefault();
+  go(t.dataset.go);
+});
+
+/* ---- practice ---- */
+const OPTS = [
+  {l:'A', x:'−128', ok:true},
+  {l:'B', x:'−127'},
+  {l:'C', x:'−256'},
+  {l:'D', x:'127'},
+];
+const SUBS=[
+  {q:'0 有两种表示形式的是', type:'多选', ans:'AB', multi:true},
+  {q:'表示范围最大的是', type:'单选', ans:'C'},
+  {q:'用于浮点数阶码的是', type:'单选', ans:'D'},
+  {q:'取反加一得到的是', type:'单选', ans:'C'},
+];
+const L=['A','B','C','D'];
+let picked=null, answered=false, mode='single', subAnswered=false;
+const picks=SUBS.map(()=>[]);
+
+const pOpts = document.getElementById('pOpts');
+pOpts.innerHTML = OPTS.map(o=>`<li><button class="opt" data-l="${o.l}"><span class="box">${o.l}</span><span class="tx">${o.x}</span></button></li>`).join('');
+pOpts.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{
+  if(answered) return;
+  picked=b.dataset.l;
+  pOpts.querySelectorAll('.opt').forEach(x=>x.classList.toggle('sel', x.dataset.l===picked));
+  document.getElementById('submitBtn').disabled=false;
+  document.getElementById('bandHint').textContent='已选 '+picked+'，提交后判定';
+}));
+
+const subsEl=document.getElementById('subs');
+function renderSubs(locked){
+  subsEl.innerHTML=SUBS.map((s,i)=>`
+    <li class="sub">
+      <div class="q"><i>${i+1}</i><span>${s.q}</span><span class="qt" style="flex:none">${s.type}</span></div>
+      <div class="chips">${L.map(l=>{
+        const sel=picks[i].includes(l);
+        let cls='chip'+(sel?' sel':'');
+        if(locked) cls='chip'+(s.ans.includes(l)?' ok':(sel?' no':''));
+        return `<button class="${cls}" data-s="${i}" data-l="${l}" ${locked?'disabled':''}>${l}</button>`;
+      }).join('')}</div>
+    </li>`).join('');
+  subsEl.querySelectorAll('.chip:not([disabled])').forEach(b=>b.addEventListener('click',()=>{
+    const i=+b.dataset.s, l=b.dataset.l;
+    picks[i] = SUBS[i].multi
+      ? (picks[i].includes(l)? picks[i].filter(x=>x!==l) : [...picks[i],l].sort())
+      : (picks[i][0]===l? [] : [l]);
+    renderSubs(false);
+    const done=picks.every(p=>p.length);
+    document.getElementById('submitBtn').disabled=!done;
+    document.getElementById('bandHint').textContent = done?'四个子题都选完了，提交后整题判定':'还有子题没选';
+  }));
+}
+renderSubs(false);
+
+/* 本轮进度：十个方块 */
+function drawSquares(done, total){
+  document.getElementById('squares').innerHTML =
+    Array.from({length:total},(_,i)=>
+      `<i class="${i<done?'done':(i===done?'cur':'')}"></i>`).join('');
+}
+drawSquares(2,10);
+
+function resetBand(){
+  const band=document.getElementById('band-practice');
+  band.classList.remove('good','bad');
+  document.getElementById('bandHint').style.display='';
+  document.getElementById('bandVerdict').style.display='none';
+  document.getElementById('bandVerdict').innerHTML='';
+  document.getElementById('submitBtn').style.display='';
+  document.getElementById('submitBtn').disabled=true;
+  document.getElementById('nextBtn').style.display='none';
+  document.getElementById('bandHint').textContent = mode==='match' ? '四个子题都选完才能提交' : '选一个选项再提交';
+}
+
+document.getElementById('submitBtn').addEventListener('click',()=>{
+  if(mode==='single'){
+    if(!picked||answered) return;
+    answered=true;
+    const ok = picked==='A';
+    pOpts.querySelectorAll('.opt').forEach(x=>{
+      x.classList.remove('sel');
+      if(x.dataset.l==='A'){ x.classList.add('ok'); x.querySelector('.tx').insertAdjacentHTML('afterend','<span class="tag">正确答案</span>'); }
+      if(x.dataset.l===picked && !ok){ x.classList.add('no'); x.querySelector('.tx').insertAdjacentHTML('afterend','<span class="tag bad">你的选择</span>'); }
+    });
+    document.getElementById('pExp').classList.add('on');
+    const band=document.getElementById('band-practice');
+    band.classList.add(ok?'good':'bad');
+    document.getElementById('bandHint').style.display='none';
+    const v=document.getElementById('bandVerdict');
+    v.style.display='';
+    v.textContent = ok?'答对':'答错，正确答案 A';
+    v.insertAdjacentHTML('beforeend', `<small>${ok?'进入第 4 个间隔，7 天后（10 月 21 日）再出现':'回到第 1 个间隔，明天再出现'}</small>`);
+    document.getElementById('submitBtn').style.display='none';
+    document.getElementById('nextBtn').style.display='';
+  } else {
+    if(subAnswered) return;
+    subAnswered=true;
+    const ok=SUBS.every((s,i)=>picks[i].join('')===s.ans);
+    renderSubs(true);
+    document.getElementById('mExp').classList.add('on');
+    const band=document.getElementById('band-practice');
+    band.classList.add(ok?'good':'bad');
+    document.getElementById('bandHint').style.display='none';
+    const v=document.getElementById('bandVerdict');
+    v.style.display='';
+    v.textContent = ok?'答对':'答错，任一子题错就是整题错';
+    v.insertAdjacentHTML('beforeend', `<small>${ok?'进入第 2 个间隔，2 天后再出现':'回到第 1 个间隔，明天再出现'}</small>`);
+    document.getElementById('submitBtn').style.display='none';
+    document.getElementById('nextBtn').style.display='';
+  }
+});
+
+document.getElementById('nextBtn').addEventListener('click',()=>{
+  if(mode==='single'){
+    /* 下一题：匹配题 */
+    mode='match';
+    document.getElementById('pSingle').style.display='none';
+    document.getElementById('pMatch').style.display='';
+    document.querySelector('.phead .num').textContent='第 4 / 10';
+    document.getElementById('pType').textContent='匹配题';
+    drawSquares(3,10);
+    document.querySelector('.phead .due').textContent='第 1 个间隔';
+      subAnswered=false;
+    resetBand();
+    window.scrollTo({top:0});
+  } else {
+    /* 一轮做完 */
+    mode='single';
+    document.getElementById('pMatch').style.display='none';
+    document.getElementById('pSingle').style.display='';
+    document.querySelector('.phead .num').textContent='第 3 / 10';
+    document.getElementById('pType').textContent='单选题';
+    drawSquares(2,10);
+    document.querySelector('.phead .due').textContent='第 3 个间隔';
+      answered=false; picked=null;
+    pOpts.querySelectorAll('.opt').forEach(x=>{x.className='opt'; x.querySelector('.tag')?.remove();});
+    document.getElementById('pExp').classList.remove('on');
+    document.getElementById('mExp').classList.remove('on');
+    picks.forEach((_,i)=>picks[i]=[]);
+    renderSubs(false);
+    resetBand();
+    go('home');
+    toast('这一轮做完了，重新打乱开始下一轮');
+  }
+});
+
+/* ---- import ---- */
+const REV=[
+  {t:'单选题',stem:'在 8 位补码表示中，能表示的最小整数是',opts:'A −128　B −127　C −256　D 127',ans:'A'},
+  {t:'多选题',stem:'下列关于 IEEE 754 单精度浮点数的说法，正确的有',opts:'A 符号位 1 位　B 阶码 8 位，采用移码　C 尾数 23 位，隐含最高位 1　D 能精确表示 0.1',ans:'ABC'},
+  {t:'判断题',stem:'补码的减法运算可以转换为加法运算。',opts:'判断题，固定「正确 / 错误」',ans:'√'},
+  {t:'匹配题',stem:'把下列术语与它的编码方式对应起来',opts:'共用选项 A 原码　B 反码　C 补码　D 移码，2 个子题',ans:'1 AB　2 C'},
+  {t:'单选题',stem:'定点数补码算术右移一位时，符号位如何处理？',opts:'A 补 0　B 保持符号位不变　C 取反　D 由溢出位决定',ans:'B'},
+  {t:'多选题',stem:'以下属于组合逻辑电路的有',opts:'A 编码器　B 译码器　C 触发器　D 加法器',ans:'ABD'},
+  {t:'单选题',stem:'Cache 与主存之间的地址映射方式不包括',opts:'A 直接映射　B 全相联　C 组相联　D 页式映射',ans:''},
+  {t:'判断题',stem:'IEEE 754 单精度浮点数的尾数隐含最高位 1。',opts:'判断题，固定「正确 / 错误」',ans:'√'},
+  {t:'单选题',stem:'指令周期中，取指阶段完成的工作是',opts:'A 从主存取指令送到 IR　B 计算操作数地址　C 执行运算　D 写回结果',ans:'A'},
+  {t:'多选题',stem:'影响流水线性能的因素有',opts:'A 结构相关　B 数据相关　C 控制相关　D 编译优化',ans:'ABC'},
+  {t:'单选题',stem:'总线带宽的单位通常是',opts:'A MB/s　B MHz　C bit　D 字节',ans:'A'},
+  {t:'判断题',stem:'Cache 的命中率越高，平均访问时间越短。',opts:'判断题，固定「正确 / 错误」',ans:'√'},
+];
+document.getElementById('revList').innerHTML = REV.map((r,i)=>`
+  <div class="rev">
+    <div class="top-line"><span class="no">${String(i+1).padStart(2,'0')}</span><span class="qt">${r.t}</span></div>
+    <div class="stem" style="padding-left:30px">${r.stem}</div>
+    <div class="optsline" style="padding-left:30px">${r.opts}</div>
+    <div class="ansrow" style="padding-left:30px">
+      <label>答案</label>
+      <input class="ans ${r.ans?'':'miss'}" value="${r.ans}" placeholder="缺答案">
+      <div class="acts"><button>改题型</button><button>拆分</button><button>合并</button><button class="del">删除</button></div>
+    </div>
+  </div>`).join('');
+function step2Visible(){ return document.getElementById('step2').style.display !== 'none'; }
+document.getElementById('toReview').addEventListener('click',()=>{
+  document.getElementById('step1').style.display='none';
+  document.getElementById('step2').style.display='';
+  document.getElementById('band-import').classList.add('on');
+  window.scrollTo({top:0});
+});
+document.getElementById('cancelReview').addEventListener('click',()=>{
+  document.getElementById('step1').style.display='';
+  document.getElementById('step2').style.display='none';
+  document.getElementById('band-import').classList.remove('on');
+  window.scrollTo({top:0});
+});
+document.getElementById('commit').addEventListener('click',()=>{
+  const m=document.querySelector('.ans.miss');
+  if(m){ toast('还有 1 道题缺答案'); m.focus(); return; }
+  toast('已写入 12 道题到「计算机组成原理」');
+  document.getElementById('band-import').classList.remove('on');
+  go('home');
+});
+document.getElementById('pickFile').addEventListener('click',()=>toast('打开系统文件选择器（原型未接）'));
+document.getElementById('doBackup').addEventListener('click',()=>toast('已导出 KnowledgeKeeper-2026-10-14.json'));
+document.getElementById('doRestore').addEventListener('click',()=>toast('整库替换前会再确认（原型未接）'));
+
+/* ---- toast ---- */
+let tt;
+function toast(m){
+  const el=document.getElementById('toast');
+  el.textContent=m; el.classList.add('on');
+  clearTimeout(tt); tt=setTimeout(()=>el.classList.remove('on'),2200);
+}
+
+const initial=(location.hash||'').replace('#','');
+go(VIEWS.includes(initial)?initial:body.dataset.view);
+window.addEventListener('hashchange',()=>{
+  const h=(location.hash||'').replace('#','');
+  if(VIEWS.includes(h)&&h!==body.dataset.view) go(h);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowledge Keeper｜六格刻度</title>
+<style>
+:root{
+  --paper:#FDFAF5; --paper2:#F7F1E6; --rule:#E4E0DD; --rule-ink:#DCD3C6;
+  --ink:#2C2827; --ink2:#4B351E; --mute:#6F6254; --faint:#7E7162;
+  --amber:#9E5A2C; --orange:#A94E15; --orange-fill:#D37035; --blue:#326CE5;
+  --green:#3E7A4E; --red:#B23A2A;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);color:var(--ink);
+  font:400 16px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- top bar ---------- */
+.top{height:58px;display:flex;align-items:center;gap:14px;padding:0 40px;border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--paper);z-index:20}
+.brand{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;color:var(--ink2);letter-spacing:-.1px;white-space:nowrap}
+.top .right{margin-left:auto;display:flex;align-items:center;gap:22px;font-size:13px;color:var(--mute)}
+.top .right button:hover{color:var(--amber)}
+.top .right .date{color:var(--ink2)}
+.sep{width:1px;height:14px;background:var(--rule-ink)}
+
+/* ---------- views ---------- */
+.view{display:none}
+.view.on{display:block}
+
+/* ---------- poster head (signature) ---------- */
+.poster{padding:44px 40px 28px;border-bottom:1px solid var(--rule)}
+.poster .kicker{font-size:13px;color:var(--mute);letter-spacing:.6px}
+.poster h1{font-size:44px;line-height:1.2;font-weight:700;color:var(--ink2);margin:10px 0 10px;letter-spacing:-.5px}
+.poster .lede{font-size:16px;color:var(--mute);margin:0 0 34px;max-width:52ch}
+.poster .lede b{color:var(--ink2);font-weight:600}
+
+.ruler{display:flex;align-items:flex-end;gap:0;position:relative}
+.ruler::after{content:"";position:absolute;left:0;right:0;bottom:-9px;height:1px;background:var(--rule-ink)}
+.stop{position:relative;padding-right:56px;min-width:0}
+.stop .big{
+  font-size:104px;line-height:.86;font-weight:900;letter-spacing:-.05em;
+  color:var(--orange);display:block;position:relative;
+}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+  .stop .big{
+    position:relative;display:inline-block;color:transparent;
+    background-image:repeating-linear-gradient(180deg,var(--orange-fill) 0 5px,transparent 5px 11px);
+    -webkit-background-clip:text;background-clip:text;
+  }
+.stop .big i{
+    position:absolute;left:5px;top:5px;font-style:normal;
+    background-image:repeating-linear-gradient(180deg,var(--amber) 0 5px,transparent 5px 11px);
+    -webkit-background-clip:text;background-clip:text;
+    color:transparent;opacity:.6;
+  }
+}
+.stop .big.dim{opacity:.34}
+.stop .cnt{font-size:13.5px;color:var(--ink2);margin-top:6px;font-variant-numeric:tabular-nums}
+.stop .cnt b{font-weight:700;font-size:15px}
+.stop .unit{font-size:12px;color:var(--faint);letter-spacing:.5px}
+.stop.rest .big{font-size:52px;color:#8F8270;letter-spacing:0;font-weight:800}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+  .stop.rest .big{background:none;color:#8F8270;-webkit-text-fill-color:#8F8270}
+}
+.stop.rest{padding-right:56px}
+.stop.rest.first{padding-left:34px;margin-left:18px;border-left:1px solid var(--rule-ink)}
+
+/* ---------- editorial body ---------- */
+.body{display:grid;grid-template-columns:minmax(0,700px) 250px;gap:70px;padding:44px 40px 120px}
+.col-main{min-width:0}
+.col-note{font-size:13px;color:var(--mute);line-height:1.85;padding-top:6px}
+.col-note h3{font-size:13px;font-weight:600;color:var(--ink2);margin:0 0 10px;letter-spacing:.4px}
+.col-note p{margin:0 0 14px}
+.col-note b{color:var(--ink2)}
+.col-note .mark{border-top:1px solid var(--rule);margin-top:20px;padding-top:16px}
+.stage6{display:flex;gap:5px;margin:12px 0 10px}
+.stage6 i{flex:1;height:26px;background:#EFE8DC;border-radius:1px;position:relative}
+.stage6 i.on{background:var(--orange-fill)}
+.stage6 i.now{background:var(--orange-fill);box-shadow:inset 0 -4px 0 #A85426}
+.stage6 i span{position:absolute;bottom:-17px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--faint)}
+.sect-h{font-size:13px;color:var(--mute);letter-spacing:.6px;margin:0 0 4px}
+
+/* group rows */
+.groups{border-top:1px solid var(--rule-ink)}
+.g{display:flex;align-items:baseline;gap:18px;width:100%;padding:22px 0;border-bottom:1px solid var(--rule)}
+.g .name{font-size:22px;font-weight:600;color:var(--ink2);letter-spacing:-.2px}
+.g .meta{font-size:13.5px;color:var(--mute);margin-top:2px}
+.g .right{margin-left:auto;display:flex;align-items:baseline;gap:26px;flex:none}
+.g .due{font-size:20px;font-weight:700;color:var(--orange);font-variant-numeric:tabular-nums}
+.g .due small{font-size:12px;font-weight:400;color:var(--mute);margin-left:4px}
+.g .due.none{font-size:13.5px;font-weight:400;color:var(--faint)}
+.g:hover .name{color:var(--amber)}
+.g .go{font-size:13px;color:var(--faint);flex:none}
+.g:hover .go{color:var(--orange)}
+
+/* practice */
+.qhead{display:flex;align-items:baseline;gap:16px;font-size:13px;color:var(--mute);margin-bottom:26px}
+.qhead .t{color:var(--ink2);font-weight:600;font-size:14px}
+.qhead .stage{color:var(--orange)}
+.qhead .late{color:var(--red)}
+.qstem{font-size:32px;line-height:1.5;font-weight:500;color:var(--ink2);margin:0 0 8px;letter-spacing:-.3px;max-width:34ch}
+.opts{list-style:none;margin:30px 0 0;padding:0;border-top:1px solid var(--rule-ink)}
+.opt{display:flex;align-items:flex-start;gap:16px;width:100%;padding:16px 8px 16px 0;border-bottom:1px solid var(--rule);min-height:56px}
+.opt .lt{flex:none;width:20px;font-weight:700;color:var(--amber);font-size:15px;line-height:1.6}
+.opt .tx{font-size:17.5px;line-height:1.55}
+.opt:hover .tx{text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--amber)}
+.opt.sel{background:var(--paper2)}
+.opt.sel .lt{color:var(--orange)}
+.opt.ok .lt{color:var(--green)}
+.opt.no .lt{color:var(--red)}
+.opt .tag{margin-left:auto;font-size:12.5px;color:var(--green);flex:none;align-self:center}
+.opt .tag.bad{color:var(--red)}
+
+.actions{display:flex;align-items:center;gap:16px;margin-top:30px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 26px;border-radius:2px;font-size:16px;border:1px solid var(--rule-ink);background:var(--paper);color:var(--ink)}
+.btn:hover{border-color:var(--amber);color:var(--amber)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:500}
+.btn.primary:hover{background:#2A5FD0;border-color:#2A5FD0;color:#fff}
+.btn.primary:disabled{background:#C6D2E7;border-color:#C6D2E7;color:#fff;cursor:default}
+.btn.ghost{border-color:transparent;color:var(--amber);padding:0 4px}
+.hint{font-size:13.5px;color:var(--mute)}
+
+.verdict{margin-top:30px;border-left:3px solid var(--green);padding:2px 0 2px 20px;display:none}
+.verdict.on{display:block}
+.verdict .word{font-size:26px;font-weight:700;letter-spacing:-.3px;color:var(--green);line-height:1.3}
+.verdict.bad{border-left-color:var(--red)}
+.verdict.bad .word{color:var(--red)}
+.verdict .line{font-size:15px;color:var(--mute);margin-top:4px}
+.verdict .line b{color:var(--ink2)}
+.verdict .exp{margin-top:16px;padding-top:14px;border-top:1px solid var(--rule);font-size:15px;line-height:1.85;color:var(--ink);max-width:52ch}
+.verdict .exp b{color:var(--ink2);font-weight:600}
+.verdict .next{margin-top:18px}
+
+/* matching */
+.shared{border-top:1px solid var(--rule-ink);border-bottom:1px solid var(--rule);padding:16px 0;margin-top:24px;display:flex;flex-wrap:wrap;gap:6px 26px;font-size:15.5px}
+.shared .lb{font-size:12px;color:var(--mute);letter-spacing:.5px;align-self:center;margin-right:6px}
+.shared span b{color:var(--amber);margin-right:5px;font-weight:700}
+.subs{list-style:none;margin:0;padding:0}
+.sub{padding:18px 0;border-bottom:1px solid var(--rule)}
+.sub .q{font-size:17px;line-height:1.55;margin-bottom:12px;display:flex;gap:12px;align-items:baseline}
+.sub .q i{font-style:normal;font-size:12.5px;color:var(--faint);width:14px;flex:none;font-variant-numeric:tabular-nums}
+.sub .q .ty{font-size:11.5px;color:var(--mute);border:1px solid var(--rule);border-radius:2px;padding:0 5px;flex:none}
+.chips{display:flex;gap:8px;flex-wrap:wrap;padding-left:26px}
+.chip{min-width:46px;height:44px;border:1px solid #B3A695;border-radius:2px;font-size:15px;display:grid;place-items:center;color:var(--ink);font-weight:600}
+.chip:hover{border-color:var(--amber);color:var(--amber)}
+.chip.sel{background:var(--ink2);border-color:var(--ink2);color:#FDFAF5}
+.chip.ok{border-color:var(--green);color:var(--green);background:#EDF6EE}
+.chip.no{border-color:var(--red);color:var(--red);background:#FBEAE6;text-decoration:line-through}
+.chip:disabled{cursor:default}
+
+/* import */
+.paste{width:100%;height:200px;border:1px solid var(--rule-ink);background:#fff;padding:16px 18px;font:400 13.5px/1.9 ui-monospace,SFMono-Regular,Menlo,Consolas,"Noto Sans Mono CJK SC",monospace;color:var(--ink);resize:vertical;margin:0 0 20px}
+.field{margin-bottom:20px;max-width:520px}
+.field label{display:block;font-size:13px;color:var(--mute);margin-bottom:8px;letter-spacing:.4px}
+.select,.input{width:100%;height:48px;border:1px solid var(--rule-ink);background:#fff;border-radius:2px;padding:0 14px;font:inherit;font-size:16px;color:var(--ink)}
+.select:focus,.input:focus,textarea:focus{outline:2px solid #DCE5F7;border-color:var(--blue)}
+.tally{display:flex;align-items:flex-end;gap:22px;margin:0 0 6px}
+.tally .n{font-size:76px;line-height:.9;font-weight:800;color:var(--ink2);letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.tally .n.miss{color:var(--red)}
+.tally .of{font-size:22px;color:var(--faint);font-weight:400;padding-bottom:8px}
+.tally .say{font-size:14.5px;color:var(--mute);padding-bottom:10px;line-height:1.7}
+.tally .say b{color:var(--red)}
+.rev{padding:18px 0;border-bottom:1px solid var(--rule)}
+.rev:first-of-type{border-top:1px solid var(--rule-ink)}
+.rev .l1{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+.rev .no{font-size:12.5px;color:var(--faint);font-variant-numeric:tabular-nums;width:18px;flex:none}
+.rev .ty{font-size:11.5px;color:var(--mute);border:1px solid var(--rule);border-radius:2px;padding:0 5px;flex:none}
+.rev .stem{font-size:16px;line-height:1.6}
+.rev .optsline{font-size:13px;color:var(--mute);line-height:1.75;margin:4px 0 10px;padding-left:30px}
+.rev .row{display:flex;align-items:center;gap:12px;padding-left:30px}
+.rev .row label{font-size:12.5px;color:var(--mute);flex:none}
+.rev .ans{height:42px;width:126px;border:1px solid var(--rule-ink);border-radius:2px;padding:0 10px;font:inherit;font-size:15px;background:#fff;color:var(--ink);text-align:center;letter-spacing:2px}
+.rev .ans.miss{border-color:var(--red);background:#FBEAE6;color:var(--red);letter-spacing:0}
+.rev .ans.miss::placeholder{color:var(--red);font-size:12.5px}
+.rev .acts{margin-left:auto;display:flex;gap:16px;font-size:12.5px;color:var(--mute)}
+.rev .acts button:hover{color:var(--orange)}
+.rev .acts .del:hover{color:var(--red)}
+
+/* backup */
+.stat{display:flex;gap:52px;margin:6px 0 34px}
+.stat div{font-size:13px;color:var(--mute)}
+.stat b{display:block;font-size:30px;color:var(--ink2);font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.panel{border-top:1px solid var(--rule-ink);padding:24px 0}
+.panel h2{font-size:20px;font-weight:600;color:var(--ink2);margin:0 0 8px}
+.panel p{font-size:15px;line-height:1.8;color:var(--mute);margin:0 0 18px;max-width:46ch}
+.install{border:1px solid var(--rule-ink);padding:18px 20px;font-size:14.5px;line-height:1.85;color:var(--mute)}
+.install b{color:var(--ink2)}
+.toast{position:fixed;left:40px;bottom:34px;background:var(--ink2);color:var(--paper);font-size:14px;padding:12px 20px;border-radius:2px;opacity:0;transform:translateY(8px);transition:.2s;z-index:60;pointer-events:none}
+.toast.on{opacity:1;transform:none}
+
+@media(max-width:1080px){
+  .body{grid-template-columns:minmax(0,1fr);gap:0;padding:34px 28px 110px}
+  .col-note{border-top:1px solid var(--rule);margin-top:34px;padding-top:22px;display:flex;flex-wrap:wrap;gap:0 40px}
+  .col-note>div{flex:1 1 220px}
+  .poster{padding:32px 28px 0}
+  .stop{padding-right:26px}
+  .stop .big{font-size:76px}
+  .stop.rest .big{font-size:40px}
+  .top{padding:0 28px}
+}
+@media(max-width:700px){
+  .poster h1{font-size:32px}
+  .qstem{font-size:24px}
+  .top{padding:0 18px;gap:0;height:52px}
+  .top .right{gap:14px;font-size:12.5px;white-space:nowrap}
+  .top .right .date{display:none}
+  .brand{font-size:14px}
+  .top .right button:nth-child(3),.top .right button:nth-child(4){display:none}
+  .top .right .sep{display:none}
+  .brand{font-size:15px}
+  .ruler{flex-wrap:wrap;row-gap:16px}
+  .ruler::after{display:none}
+  .stop{flex:0 0 33.333%;padding-right:0}
+  .stop .big{font-size:60px}
+  .stop.rest{flex:0 0 50%;padding-right:0;padding-left:0;margin-left:0;border-left:0}
+  .stop.rest.first{border-left:0;padding-left:0;margin-bottom:6px}
+  .stop.rest .big{font-size:34px}
+  .stop .cnt b{font-size:13px}
+  .poster{padding:26px 18px 0}
+  .body{padding:26px 18px 100px}
+  .g{flex-wrap:wrap;gap:8px 16px}
+  .g .name{font-size:19px}
+  .g .right{margin-left:0;gap:16px}
+  .g .go{display:none}
+  .tally .n{font-size:54px}
+}
+</style>
+</head>
+<body data-view="home">
+
+<header class="top">
+  <button class="brand" data-go="home">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="2.5" y="6.5" width="12" height="14" rx="1.5" stroke="#4B351E" stroke-width="1.7"/>
+      <path d="M6.5 3.5h13v14" stroke="#D37035" stroke-width="1.7" stroke-linecap="round"/>
+    </svg>
+    Knowledge Keeper
+  </button>
+  <div class="right">
+    <span class="date">10 月 14 日 星期二</span>
+    <i class="sep"></i>
+    <button data-go="import">导入</button>
+    <button data-go="entry">录入</button>
+    <button data-go="backup">备份 3 天前</button>
+  </div>
+</header>
+
+<!-- ================= HOME ================= -->
+<section class="view on" id="v-home">
+  <div class="poster">
+    <div class="kicker">遗忘曲线，六格刻度</div>
+    <h1>26 道在复习中</h1>
+    <p class="lede">做错的题按 <b>1、2、4、7、15、30</b> 天重新出现，答对进下一格，答错回到第一格。今天到期 <b>9</b> 道。</p>
+
+    <div class="ruler">
+      <div class="stop"><span class="big" data-n="1"><i aria-hidden="true">1</i>1</span><div class="cnt"><b class="num">7</b> 道</div><div class="unit">1 天</div></div>
+      <div class="stop"><span class="big" data-n="2"><i aria-hidden="true">2</i>2</span><div class="cnt"><b class="num">5</b> 道</div><div class="unit">2 天</div></div>
+      <div class="stop"><span class="big" data-n="4"><i aria-hidden="true">4</i>4</span><div class="cnt"><b class="num">4</b> 道</div><div class="unit">4 天</div></div>
+      <div class="stop"><span class="big" data-n="7"><i aria-hidden="true">7</i>7</span><div class="cnt"><b class="num">4</b> 道</div><div class="unit">7 天</div></div>
+      <div class="stop"><span class="big" data-n="15"><i aria-hidden="true">15</i>15</span><div class="cnt"><b class="num">3</b> 道</div><div class="unit">15 天</div></div>
+      <div class="stop"><span class="big" data-n="30"><i aria-hidden="true">30</i>30</span><div class="cnt"><b class="num">3</b> 道</div><div class="unit">30 天</div></div>
+      <div class="stop rest first"><span class="big">5</span><div class="cnt">完成复习</div><div class="unit">不再排期</div></div>
+      <div class="stop rest"><span class="big">21</span><div class="cnt">未排期</div><div class="unit">从没做错</div></div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="col-main">
+      <p class="sect-h">分组</p>
+      <div class="groups">
+        <button class="g" data-go="practice">
+          <div><div class="name">错题集</div><div class="meta">12 道题，正确率 68%</div></div>
+          <div class="right"><span class="due">4<small>到期</small></span><span class="go">练习</span></div>
+        </button>
+        <button class="g" data-go="practice">
+          <div><div class="name">计算机组成原理</div><div class="meta">10 道题，正确率 76%</div></div>
+          <div class="right"><span class="due">3<small>到期</small></span><span class="go">练习</span></div>
+        </button>
+        <button class="g" data-go="practice">
+          <div><div class="name">教育心理学</div><div class="meta">21 道题，正确率 81%</div></div>
+          <div class="right"><span class="due none">今天没有到期的</span><span class="go">练习</span></div>
+        </button>
+        <button class="g" data-go="practice">
+          <div><div class="name">英语长难句</div><div class="meta">9 道题，正确率 55%</div></div>
+          <div class="right"><span class="due">2<small>到期</small></span><span class="go">练习</span></div>
+        </button>
+      </div>
+    </div>
+    <aside class="col-note">
+      <div>
+        <h3>今天</h3>
+        <p>到期 9 道，按到期日从早到晚排在前面，最久没复习的先出。</p>
+        <p>其余 43 道打乱跟上。一轮 52 道，做完自动重新打乱。</p>
+        <div class="mark">
+          <h3>备份</h3>
+          <p>上次备份在 3 天前。题库只在这台设备的浏览器里。</p>
+          <button class="btn ghost" data-go="backup" style="font-size:13px;height:auto">去备份</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= PRACTICE ================= -->
+<section class="view" id="v-practice">
+  <div class="body" style="padding-top:52px">
+    <div class="col-main">
+      <div class="qhead">
+        <span class="t" id="pGroup">计算机组成原理</span>
+        <span id="pType">单选题</span>
+        <span class="num" id="pNum">第 3 / 10</span>
+        <span class="stage" id="pStage">第 3 格</span><span class="late" id="pLate">逾期 2 天</span>
+      </div>
+
+      <div id="pSingle">
+        <h2 class="qstem">在 8 位补码表示中，能表示的最小整数是</h2>
+        <ul class="opts" id="pOpts"></ul>
+        <div class="actions">
+          <button class="btn primary" id="pSubmit" disabled>提交</button>
+          <span class="hint" id="pHint">选一个再提交</span>
+        </div>
+        <div class="verdict" id="pVerdict">
+          <div class="word" id="pWord">答对</div>
+          <div class="line" id="pLine"></div>
+          <div class="exp" id="pExp"><b>解析</b>　8 位补码的表示范围是 −128 ~ +127。−128 由 1000 0000 表示，没有对应的正数——这是补码比原码多出一个负数的原因。</div>
+          <div class="next"><button class="btn" id="pNext">下一题</button></div>
+        </div>
+      </div>
+
+      <div id="pMatch" style="display:none">
+        <h2 class="qstem">把下列术语与它的编码方式对应起来</h2>
+        <div class="shared"><span class="lb">共用选项</span><span><b>A</b>原码</span><span><b>B</b>反码</span><span><b>C</b>补码</span><span><b>D</b>移码</span></div>
+        <ul class="subs" id="subs"></ul>
+        <div class="actions">
+          <button class="btn primary" id="mSubmit" disabled>提交</button>
+          <span class="hint" id="mHint">四个子题都选完才能提交</span>
+        </div>
+        <div class="verdict" id="mVerdict">
+          <div class="word" id="mWord">答对</div>
+          <div class="line" id="mLine"></div>
+          <div class="exp"><b>解析</b>　0 在原码和反码里有 +0 / −0 两种写法；补码把 −0 的位置让给了 −128，所以表示范围最大；移码把符号位取反，正好可以按无符号数比较大小，因此用于阶码。</div>
+          <div class="next"><button class="btn" data-go="home">回到题目列表</button></div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="col-note">
+      <div>
+        <h3>这道题</h3>
+        <p>第 <b>3</b> 格，10 月 12 日到期，已经逾期 2 天。</p>
+        <div class="stage6"><i class="on"></i><i class="on"></i><i class="now"></i><i></i><i></i><i></i></div>
+        <div style="display:flex;gap:5px;font-size:10px;color:var(--faint);margin-bottom:14px">
+          <span style="flex:1;text-align:center">1</span><span style="flex:1;text-align:center">2</span><span style="flex:1;text-align:center">4</span><span style="flex:1;text-align:center">7</span><span style="flex:1;text-align:center">15</span><span style="flex:1;text-align:center">30</span>
+        </div>
+        <p>历史 <b>5 对 2 错</b>。这次答对进第 4 格（7 天），答错回到第 1 格。</p>
+        <div class="mark">
+          <h3>匹配题示例</h3>
+          <p>四个子题共用一组选项，任一子题错就是整题错。</p>
+          <button class="btn ghost" id="toMatch" style="font-size:13px;height:auto">看一道</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= IMPORT ================= -->
+<section class="view" id="v-import">
+  <div class="body" style="padding-top:52px">
+    <div class="col-main">
+      <div class="kicker" style="font-size:13px;color:var(--mute);letter-spacing:.6px">导入</div>
+      <h1 style="font-size:38px;font-weight:700;color:var(--ink2);margin:8px 0 10px;letter-spacing:-.4px">把题交进来</h1>
+      <p style="font-size:16px;color:var(--mute);margin:0 0 28px;max-width:50ch">PDF、Word、Excel，或者从网页复制的文本。解析结果先进校对，改完再写进分组。</p>
+
+      <div id="step1">
+        <textarea class="paste">1. 在 8 位补码表示中，能表示的最小整数是
+A. −128　B. −127　C. −256　D. 127
+答案：A
+解析：8 位补码的范围是 −128 ~ +127。
+
+2. 下列关于 IEEE 754 单精度浮点数的说法，正确的有
+A. 符号位 1 位　B. 阶码 8 位，采用移码　C. 尾数 23 位，隐含最高位 1　D. 能精确表示 0.1
+答案：ABC
+
+3. 补码的减法运算可以转换为加法运算。
+答案：√</textarea>
+        <div class="field">
+          <label>放进哪个分组</label>
+          <select class="select">
+            <option>错题集</option><option selected>计算机组成原理</option><option>教育心理学</option><option>英语长难句</option><option>＋ 新建分组</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:14px;align-items:center">
+          <button class="btn" id="pickFile">选择文件</button>
+          <button class="btn primary" id="toReview">开始校对</button>
+          <span class="hint">识别到 12 道题</span>
+        </div>
+      </div>
+
+      <div id="step2" style="display:none">
+        <div class="tally">
+          <span class="n">11</span><span class="of">/ 12</span>
+          <span class="say">识别到 <b>12</b> 道题，答案只有 11 个。<br>第 7 题缺答案，补上才能写入。</span>
+        </div>
+        <div id="revList" style="margin-top:14px"></div>
+        <div class="actions"><button class="btn primary" id="commit">写入 12 道题</button><button class="btn ghost" id="cancelReview">重新粘贴</button></div>
+      </div>
+    </div>
+    <aside class="col-note">
+      <div>
+        <h3>校对规则</h3>
+        <p>题型自动推断：答案含两个以上字母算多选；选项是「正确 / 错误」或答案是 √ × 算判断；有共用选项块算匹配题。</p>
+        <p>推断错了就在左边改，改完再写入。解析不会丢，练习时会显示。</p>
+        <div class="mark">
+          <h3>不支持</h3>
+          <p>.doc 旧格式要先在 Word 里另存为 .docx。扫描件和图片里的题提不出文字。</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= ENTRY ================= -->
+<section class="view" id="v-entry">
+  <div class="body" style="padding-top:52px">
+    <div class="col-main">
+      <div style="font-size:13px;color:var(--mute);letter-spacing:.6px">录入</div>
+      <h1 style="font-size:38px;font-weight:700;color:var(--ink2);margin:8px 0 10px;letter-spacing:-.4px">录入一道题</h1>
+      <p style="font-size:16px;color:var(--mute);margin:0 0 28px;max-width:50ch">文件里没有的题用这里补。录入和编辑都不改动任何已有题目的排期。</p>
+      <div class="field"><label>题型</label><select class="select"><option>单选题</option><option>多选题</option><option>判断题</option><option>匹配题</option></select></div>
+      <div class="field"><label>分组</label><select class="select"><option>计算机组成原理</option><option>错题集</option><option>教育心理学</option><option>英语长难句</option></select></div>
+      <div class="field"><label>题干</label><input class="input" placeholder="例如：定点数补码算术右移一位时，符号位如何处理？"></div>
+      <div class="field"><label>选项（点字母标出正确答案）</label>
+        <div style="display:grid;gap:10px">
+          <div style="display:flex;gap:10px;align-items:center"><button class="chip" style="flex:none">A</button><input class="input"></div>
+          <div style="display:flex;gap:10px;align-items:center"><button class="chip" style="flex:none">B</button><input class="input"></div>
+          <div style="display:flex;gap:10px;align-items:center"><button class="chip" style="flex:none">C</button><input class="input"></div>
+          <div style="display:flex;gap:10px;align-items:center"><button class="chip" style="flex:none">D</button><input class="input"></div>
+        </div>
+      </div>
+      <div class="field"><label>解析（可空）</label><textarea class="paste" style="height:90px;font-family:inherit;font-size:16px;line-height:1.7" placeholder="练习时显示在判定下面"></textarea></div>
+      <button class="btn primary">保存到题库</button>
+    </div>
+    <aside class="col-note">
+      <div>
+        <h3>录入</h3>
+        <p>匹配题在题型里选「匹配题」，会多出共用选项和子题两块。</p>
+        <p>编辑已有题目的内容不会改动它的排期；删除题目会连带删掉作答记录和排期。</p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ================= BACKUP ================= -->
+<section class="view" id="v-backup">
+  <div class="body" style="padding-top:52px">
+    <div class="col-main">
+      <div style="font-size:13px;color:var(--mute);letter-spacing:.6px">备份与恢复</div>
+      <h1 style="font-size:38px;font-weight:700;color:var(--ink2);margin:8px 0 10px;letter-spacing:-.4px">题库只在这台设备上</h1>
+      <p style="font-size:16px;color:var(--mute);margin:0 0 26px;max-width:48ch">没有账号，也不上传。浏览器清理存储时，只有这个 JSON 文件能把它找回来。</p>
+      <div class="stat">
+        <div>上次备份<b>3 天前</b></div>
+        <div>题目<b>52</b></div>
+        <div>作答记录<b>214</b></div>
+      </div>
+      <div class="panel">
+        <h2>导出备份</h2>
+        <p>一个 JSON 文件，包含分组、题目、作答、排期和收藏。导出后会更新「上次备份」的时间。</p>
+        <button class="btn primary" id="doBackup">导出备份文件</button>
+      </div>
+      <div class="panel">
+        <h2>从备份恢复</h2>
+        <p>整库替换。当前的分组、题目和作答记录都会消失，不能撤销。</p>
+        <button class="btn" id="doRestore">选择备份文件</button>
+      </div>
+      <div class="panel">
+        <h2>装到 iPad 主屏幕</h2>
+        <div class="install">在 Safari 里点「分享」，选<b>添加到主屏幕</b>。从桌面图标打开是全屏无地址栏的，也不会被 Safari 按 7 天未访问清理存储。</div>
+      </div>
+    </div>
+    <aside class="col-note">
+      <div>
+        <h3>提醒</h3>
+        <p>备份不会自动做。建议每周导出一次，放进「文件」app 里的 iCloud 或本机目录。</p>
+        <p>恢复之后，题库就是备份文件里的样子，当前数据不会留底。</p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const body=document.body;
+const VIEWS=['home','practice','import','entry','backup'];
+function go(v){
+  body.dataset.view=v;
+  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on', s.id==='v-'+v));
+  try{history.replaceState(null,'','#'+v)}catch(e){}
+  window.scrollTo({top:0});
+}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-go]'); if(!t) return;
+  e.preventDefault(); go(t.dataset.go);
+});
+
+/* ---- single ---- */
+const OPTS=[{l:'A',x:'−128',ok:true},{l:'B',x:'−127'},{l:'C',x:'−256'},{l:'D',x:'127'}];
+let picked=null, answered=false;
+const pOpts=document.getElementById('pOpts');
+pOpts.innerHTML=OPTS.map(o=>`<li><button class="opt" data-l="${o.l}"><span class="lt">${o.l}</span><span class="tx">${o.x}</span></button></li>`).join('');
+pOpts.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{
+  if(answered) return;
+  picked=b.dataset.l;
+  pOpts.querySelectorAll('.opt').forEach(x=>x.classList.toggle('sel',x.dataset.l===picked));
+  document.getElementById('pSubmit').disabled=false;
+  document.getElementById('pHint').textContent='已选 '+picked;
+}));
+document.getElementById('pSubmit').addEventListener('click',()=>{
+  if(!picked||answered) return;
+  answered=true;
+  const ok=picked==='A';
+  pOpts.querySelectorAll('.opt').forEach(x=>{
+    x.classList.remove('sel');
+    if(x.dataset.l==='A'){x.classList.add('ok');x.querySelector('.tx').insertAdjacentHTML('afterend','<span class="tag">正确答案</span>');}
+    if(x.dataset.l===picked&&!ok){x.classList.add('no');x.querySelector('.tx').insertAdjacentHTML('afterend','<span class="tag bad">你的选择</span>');}
+  });
+  const v=document.getElementById('pVerdict');
+  v.classList.add('on'); v.classList.toggle('bad',!ok);
+  document.getElementById('pWord').textContent=ok?'答对':'答错';
+  document.getElementById('pLine').innerHTML = ok
+    ? '正确答案 <b>A</b>。进入第 4 格，7 天后（10 月 21 日）再出现。'
+    : '你选的是 <b>'+picked+'</b>，正确答案 <b>A</b>。回到第 1 格，明天再出现。';
+  document.querySelector('#pSingle .actions').style.display='none';
+});
+document.getElementById('pNext').addEventListener('click',()=>{
+  answered=false;picked=null;
+  pOpts.querySelectorAll('.opt').forEach(x=>{x.className='opt';x.querySelector('.tag')?.remove();});
+  const v=document.getElementById('pVerdict'); v.classList.remove('on','bad');
+  document.querySelector('#pSingle .actions').style.display='';
+  document.getElementById('pSubmit').disabled=true;
+  document.getElementById('pHint').textContent='选一个再提交';
+  document.getElementById('pNum').textContent='第 4 / 10';
+  toast('下一题：匹配题，术语与编码');
+  document.getElementById('toMatch').click();
+});
+
+/* ---- matching ---- */
+const SUBS=[
+  {q:'0 有两种表示形式的是',ty:'多选',ans:'AB',multi:true},
+  {q:'表示范围最大的是',ty:'单选',ans:'C'},
+  {q:'用于浮点数阶码的是',ty:'单选',ans:'D'},
+  {q:'取反加一得到的是',ty:'单选',ans:'C'},
+];
+const L=['A','B','C','D'];
+const picks=SUBS.map(()=>[]);
+const subsEl=document.getElementById('subs');
+function renderSubs(locked){
+  subsEl.innerHTML=SUBS.map((s,i)=>`
+    <li class="sub">
+      <div class="q"><i>${i+1}</i><span>${s.q}</span><span class="ty">${s.ty}</span></div>
+      <div class="chips">${L.map(l=>{
+        const sel=picks[i].includes(l);
+        let cls='chip'+(sel?' sel':'');
+        if(locked) cls='chip'+(s.ans.includes(l)?' ok':(sel?' no':''));
+        return `<button class="${cls}" data-s="${i}" data-l="${l}" ${locked?'disabled':''}>${l}</button>`;
+      }).join('')}</div>
+    </li>`).join('');
+  subsEl.querySelectorAll('.chip:not([disabled])').forEach(b=>b.addEventListener('click',()=>{
+    const i=+b.dataset.s,l=b.dataset.l;
+    picks[i]=SUBS[i].multi?(picks[i].includes(l)?picks[i].filter(x=>x!==l):[...picks[i],l].sort()):(picks[i][0]===l?[]:[l]);
+    renderSubs(false);
+    const done=picks.every(p=>p.length);
+    document.getElementById('mSubmit').disabled=!done;
+    document.getElementById('mHint').textContent=done?'四个子题都选完了':'还有子题没选';
+  }));
+}
+renderSubs(false);
+document.getElementById('mSubmit').addEventListener('click',()=>{
+  const ok=SUBS.every((s,i)=>picks[i].join('')===s.ans);
+  renderSubs(true);
+  const v=document.getElementById('mVerdict');
+  v.classList.add('on'); v.classList.toggle('bad',!ok);
+  document.getElementById('mWord').textContent=ok?'答对':'答错';
+  document.getElementById('mLine').innerHTML= ok
+    ? '四个子题全对，整道题算答对。进入第 2 格，2 天后再出现。'
+    : '有子题错了，整道题算答错。回到第 1 格，明天再出现。';
+  document.querySelector('#pMatch .actions').style.display='none';
+});
+document.getElementById('toMatch').addEventListener('click',()=>{
+  document.getElementById('pSingle').style.display='none';
+  document.getElementById('pMatch').style.display='';
+  document.getElementById('pType').textContent='匹配题';
+  document.getElementById('pNum').textContent='第 4 / 10';
+  document.getElementById('pStage').textContent='第 1 格';
+  window.scrollTo({top:0});
+});
+
+/* ---- import ---- */
+const REV=[
+  {t:'单选题',stem:'在 8 位补码表示中，能表示的最小整数是',opts:'A −128　B −127　C −256　D 127',ans:'A'},
+  {t:'多选题',stem:'下列关于 IEEE 754 单精度浮点数的说法，正确的有',opts:'A 符号位 1 位　B 阶码 8 位，采用移码　C 尾数 23 位，隐含最高位 1　D 能精确表示 0.1',ans:'ABC'},
+  {t:'判断题',stem:'补码的减法运算可以转换为加法运算。',opts:'判断题，固定「正确 / 错误」',ans:'√'},
+  {t:'匹配题',stem:'把下列术语与它的编码方式对应起来',opts:'共用选项 A 原码　B 反码　C 补码　D 移码，2 个子题',ans:'1 AB　2 C'},
+  {t:'单选题',stem:'定点数补码算术右移一位时，符号位如何处理？',opts:'A 补 0　B 保持符号位不变　C 取反　D 由溢出位决定',ans:'B'},
+  {t:'多选题',stem:'以下属于组合逻辑电路的有',opts:'A 编码器　B 译码器　C 触发器　D 加法器',ans:'ABD'},
+  {t:'单选题',stem:'Cache 与主存之间的地址映射方式不包括',opts:'A 直接映射　B 全相联　C 组相联　D 页式映射',ans:''},
+  {t:'判断题',stem:'IEEE 754 单精度浮点数的尾数隐含最高位 1。',opts:'判断题，固定「正确 / 错误」',ans:'√'},
+  {t:'单选题',stem:'指令周期中，取指阶段完成的工作是',opts:'A 从主存取指令送到 IR　B 计算操作数地址　C 执行运算　D 写回结果',ans:'A'},
+  {t:'多选题',stem:'影响流水线性能的因素有',opts:'A 结构相关　B 数据相关　C 控制相关　D 编译优化',ans:'ABC'},
+  {t:'单选题',stem:'总线带宽的单位通常是',opts:'A MB/s　B MHz　C bit　D 字节',ans:'A'},
+  {t:'判断题',stem:'Cache 的命中率越高，平均访问时间越短。',opts:'判断题，固定「正确 / 错误」',ans:'√'},
+];
+document.getElementById('revList').innerHTML=REV.map((r,i)=>`
+  <div class="rev">
+    <div class="l1"><span class="no">${String(i+1).padStart(2,'0')}</span><span class="ty">${r.t}</span><span class="stem">${r.stem}</span></div>
+    <div class="optsline">${r.opts}</div>
+    <div class="row"><label>答案</label><input class="ans ${r.ans?'':'miss'}" value="${r.ans}" placeholder="缺答案">
+      <div class="acts"><button>改题型</button><button>拆分</button><button>合并</button><button class="del">删除</button></div>
+    </div>
+  </div>`).join('');
+
+document.getElementById('toReview').addEventListener('click',()=>{
+  document.getElementById('step1').style.display='none';
+  document.getElementById('step2').style.display='';
+  window.scrollTo({top:0});
+});
+document.getElementById('cancelReview').addEventListener('click',()=>{
+  document.getElementById('step1').style.display='';
+  document.getElementById('step2').style.display='none';
+  window.scrollTo({top:0});
+});
+document.getElementById('commit').addEventListener('click',()=>{
+  const m=document.querySelector('.ans.miss');
+  if(m){toast('还有 1 道题缺答案');m.focus();return;}
+  toast('已写入 12 道题到「计算机组成原理」');
+  go('home');
+});
+document.getElementById('pickFile').addEventListener('click',()=>toast('打开系统文件选择器（原型未接）'));
+document.getElementById('doBackup').addEventListener('click',()=>toast('已导出 KnowledgeKeeper-2026-10-14.json'));
+document.getElementById('doRestore').addEventListener('click',()=>toast('整库替换前会再确认（原型未接）'));
+
+let tt;
+function toast(m){
+  const el=document.getElementById('toast');
+  el.textContent=m;el.classList.add('on');
+  clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('on'),2200);
+}
+
+const initial=(location.hash||'').replace('#','');
+go(VIEWS.includes(initial)?initial:body.dataset.view);
+window.addEventListener('hashchange',()=>{
+  const h=(location.hash||'').replace('#','');
+  if(VIEWS.includes(h)&&h!==body.dataset.view) go(h);
+});
+</script>
+</body>
+</html>

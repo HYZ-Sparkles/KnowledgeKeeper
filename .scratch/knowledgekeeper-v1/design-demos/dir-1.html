@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowledge Keeper · 我的题库</title>
+<style>
+:root{
+  --paper:#FDFAF5; --paper2:#F4F1E8; --rule:#E4E0DD; --rule-soft:#EFEBE5;
+  --ink:#2C2827; --ink2:#4B351E; --mute:#6F6254; --faint:#7E7162;
+  --amber:#9E5A2C; --orange:#A94E15; --orange-fill:#D37035; --blue:#326CE5; --blue-ink:#1E48DA;
+  --blue-wash:#D9EBFF; --green:#3E7A4E; --green-wash:#DCFCE7;
+  --red:#B23A2A; --red-wash:#FAE1DA;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font:400 15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- top bar ---------- */
+.topbar{
+  height:56px;display:flex;align-items:center;gap:4px;
+  padding:0 22px;border-bottom:1px solid var(--rule);background:var(--paper);
+  position:sticky;top:0;z-index:20;
+}
+.brand{display:flex;align-items:center;gap:9px;margin-right:30px;color:var(--blue);font-weight:700;font-size:17px;letter-spacing:-.1px;white-space:nowrap}
+.brand svg{display:block}
+.nav{display:flex;align-items:center;gap:2px}
+.nav button{
+  height:56px;padding:0 15px;font-size:15px;color:var(--ink);
+  display:flex;align-items:center;gap:7px;border-bottom:3px solid transparent;
+}
+.nav button:hover{color:var(--blue)}
+.nav button.on{color:var(--blue);border-bottom-color:var(--blue);font-weight:500}
+.nav svg{opacity:.75}
+.nav button.on svg{opacity:1}
+.topbar-right{margin-left:auto;font-size:13px;color:var(--mute);display:flex;align-items:center;gap:14px}
+.dot-sep{width:3px;height:3px;border-radius:50%;background:var(--faint)}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:240px minmax(0,1fr) 220px;align-items:start;min-height:calc(100vh - 56px)}
+
+/* ---------- left rail ---------- */
+.rail-left{border-right:1px solid var(--rule);min-height:calc(100vh - 56px);padding:16px 0 40px}
+.rail-head{
+  display:flex;align-items:center;gap:6px;padding:6px 22px 18px;
+  font-size:13px;color:var(--amber);cursor:pointer;
+}
+.tree{list-style:none;margin:0;padding:0}
+.tree li{position:relative}
+.tg{
+  display:flex;align-items:center;gap:6px;width:100%;text-align:left;
+  padding:7px 22px 7px 20px;font-size:14px;color:var(--ink);
+}
+.tg .caret{width:12px;font-size:10px;color:var(--faint);transition:transform .15s}
+.tg .caret.open{transform:rotate(90deg)}
+.tg em{margin-left:auto;font-style:normal;font-size:12px;color:var(--orange);font-variant-numeric:tabular-nums}
+.tg em.zero{color:var(--faint)}
+.tg:hover{color:var(--amber)}
+.tg.cur{font-weight:600;color:var(--ink2)}
+.tsub{list-style:none;margin:0 0 4px;padding:0}
+.tsub button{display:block;width:100%;text-align:left;padding:5px 22px 5px 38px;font-size:13.5px;color:var(--mute)}
+.tsub button:hover{color:var(--amber)}
+.tsub button.on{color:var(--ink2);font-weight:600}
+
+/* ---------- content ---------- */
+.content{padding:34px 48px 96px;max-width:1010px}
+.crumb{font-size:14px;color:var(--amber);margin-bottom:18px}
+.crumb a:hover{text-decoration:underline}
+.crumb span{color:var(--faint);margin:0 8px}
+h1{font-size:40px;line-height:1.24;font-weight:700;color:var(--ink2);margin:0 0 12px;letter-spacing:-.3px}
+.lede{font-size:15px;color:var(--mute);margin:0 0 18px;max-width:62ch}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px}
+.pill{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 11px;border-radius:13px;font-size:12.5px;background:var(--blue-wash);color:var(--blue-ink)}
+.pill.o{background:#FBEBDD;color:#9C5620}
+.pill b{font-weight:600}
+hr.rule{border:0;border-top:1px solid var(--rule);margin:22px 0 4px}
+
+/* amber dot list (the reference's signature list) */
+.dotlist{list-style:none;margin:0;padding:0}
+.dotlist>li{border-bottom:1px solid transparent}
+.row{display:flex;align-items:baseline;gap:14px;padding:15px 0 15px 2px;width:100%;text-align:left}
+.row .bullet{color:var(--amber);font-size:19px;line-height:1;flex:none;transform:translateY(-1px)}
+.row .title{font-size:16px;color:var(--amber);line-height:1.5;flex:1;min-width:0}
+.row:hover .title{text-decoration:underline;text-underline-offset:3px}
+.row .meta{flex:none;font-size:13px;color:var(--mute);font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:14px}
+.row .meta .sch{width:152px;text-align:right}
+.row .meta .hist{width:74px;text-align:right}
+.row .meta .due{color:var(--orange)}
+.row .meta .ok{color:var(--green)}
+.row .meta .done{color:var(--faint)}
+.rate{display:inline-flex;align-items:center;gap:7px;color:var(--mute)}
+.rate i{display:block;width:52px;height:3px;background:#EDE7DD;flex:none}
+.rate i b{display:block;height:100%;background:#B08A6B}
+
+/* 排期分布：一根基线 + 八个刻度 */
+.sched{margin:24px 0 2px;max-width:640px}
+.sched-h{font-size:12.5px;color:var(--mute);margin-bottom:14px;display:flex;align-items:baseline;gap:8px}
+.sched-h b{font-size:12.5px;font-weight:500;color:var(--ink2)}
+.ruler{display:flex;align-items:flex-end;height:56px;border-bottom:1px solid var(--rule);position:relative}
+.ruler div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;position:relative}
+.ruler i{display:block;width:2px;background:var(--orange-fill)}
+.ruler div.rest i{background:#BEA98F}
+.ruler div.zero i{background:#E2D9CB;height:2px !important}
+.ruler span{position:absolute;top:0;font-size:11px;color:var(--mute);font-variant-numeric:tabular-nums;line-height:1}
+.ruler div.zero span{display:none}
+.sched-legend{display:flex;margin-top:6px}
+.sched-legend div{flex:1;text-align:center;font-size:11.5px;color:var(--mute);line-height:1.4}
+.sched-legend div.rest{color:var(--faint)}
+.qtype{font-size:12px;color:var(--mute);border:1px solid var(--rule);border-radius:3px;padding:0 5px;height:19px;display:inline-flex;align-items:center;flex:none}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:42px;padding:0 18px;border-radius:4px;font-size:14.5px;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
+.btn:hover{border-color:var(--amber);color:var(--amber)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:500}
+.btn.primary:hover{background:#2A5FD0;border-color:#2A5FD0;color:#fff}
+.btn.primary:disabled{background:#C9D4E8;border-color:#C9D4E8;color:#fff;cursor:default}
+.btn.small{height:34px;padding:0 13px;font-size:13.5px}
+.btn.ghost{border-color:transparent;color:var(--amber);padding:0 6px}
+.btn.ghost:hover{color:var(--orange)}
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 4px}
+.toolbar .grow{flex:1}
+.switch{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;color:var(--mute);cursor:pointer;user-select:none}
+.switch i{width:32px;height:18px;border-radius:9px;background:#DED8CF;position:relative;transition:background .15s;flex:none}
+.switch i::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .15s}
+.switch.on{color:var(--ink2)}
+.switch.on i{background:var(--blue)}
+.switch.on i::after{transform:translateX(14px)}
+
+/* ---------- right rail ---------- */
+.rail-right{border-left:1px solid var(--rule);min-height:calc(100vh - 56px);padding:30px 20px 40px}
+.rr-block{margin-bottom:26px}
+.rr-h{font-size:14.5px;font-weight:600;color:var(--ink2);display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.rr-h svg{color:var(--orange)}
+.rr-link{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--orange);padding:5px 0;text-align:left;width:100%}
+.rr-link:hover{text-decoration:underline}
+.rr-link.mut{color:var(--mute)}
+.rr-note{font-size:12.5px;line-height:1.7;color:var(--mute);margin:6px 0 0}
+.rr-note b{color:var(--ink2);font-weight:600}
+.rr-scale{display:flex;gap:3px;margin:10px 0 8px}
+.rr-scale i{flex:1;height:4px;background:#E6E0D7;border-radius:1px}
+.rr-scale i.on{background:var(--orange)}
+
+/* ---------- views ---------- */
+.view{display:none}
+.view.on{display:block}
+
+/* practice */
+.practice-head{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--mute);margin-bottom:20px}
+.practice-head .bar{flex:1;height:3px;background:#EAE4DA;border-radius:2px;overflow:hidden;max-width:280px}
+.practice-head .bar i{display:block;height:100%;background:var(--blue);width:26%}
+.qstem{font-size:30px;line-height:1.5;color:var(--ink2);font-weight:500;margin:0 0 6px;max-width:40ch;letter-spacing:-.2px}
+.qlabel{font-size:13px;color:var(--mute);margin-bottom:14px;display:flex;gap:12px;align-items:center;max-width:720px}
+.favbtn{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 12px;margin:-8px 0 -8px auto;border:1px solid var(--rule);border-radius:3px;font-size:13px;color:var(--mute);flex:none}
+.favbtn:hover{border-color:var(--orange-fill);color:var(--orange)}
+.favbtn.on{color:var(--orange);border-color:#E6C6AC;background:#FBF1E6}
+.favbtn.on svg{fill:currentColor}
+.opts{list-style:none;margin:24px 0 0;padding:0;max-width:720px}
+.opt{display:flex;align-items:flex-start;gap:18px;padding:16px 16px 16px 12px;border-top:1px solid var(--rule);cursor:pointer;width:100%;text-align:left;position:relative}
+.opt:last-child{border-bottom:1px solid var(--rule)}
+.opt .lt{flex:none;width:18px;font-size:15px;color:var(--mute);font-weight:600;text-align:center;line-height:1.5}
+.opt .tx{font-size:16px;line-height:1.5;color:var(--ink)}
+.opt:hover{background:#FBF7F0}
+.opt.sel{background:var(--paper2)}
+.opt.sel .lt{color:var(--blue)}
+.opt.sel::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--blue)}
+.opt.right .lt{color:var(--green)}
+.opt.wrong .lt{color:var(--red)}
+.opt .tick{margin-left:auto;font-size:12.5px;color:var(--green);align-self:center}
+.opt .tick.bad{color:var(--red)}
+.submit-row{display:flex;align-items:center;gap:14px;margin-top:26px}
+.hintline{font-size:13px;color:var(--mute)}
+.feedback{margin-top:24px;border-left:2px solid var(--green);background:var(--paper2);padding:18px 20px;max-width:720px;display:none}
+.feedback.on{display:block}
+.feedback.bad{border-left-color:var(--red)}
+.fb-head{font-size:15px;font-weight:600;color:var(--green);margin-bottom:6px}
+.feedback.bad .fb-head{color:var(--red)}
+.fb-body{font-size:14.5px;line-height:1.7;color:var(--ink)}
+.fb-body b{color:var(--ink2)}
+.fb-exp{margin-top:10px;padding-top:10px;border-top:1px solid var(--rule);font-size:14px;line-height:1.75;color:var(--mute)}
+.fb-exp b{color:var(--ink2);font-weight:600}
+.fb-next{margin-top:14px}
+
+/* matching */
+.match{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr);gap:34px;margin-top:22px;max-width:900px}
+.shared{border:1px solid var(--rule);background:var(--paper2);padding:14px 16px;align-self:start}
+.shared h3{font-size:13px;font-weight:600;color:var(--mute);margin:0 0 10px;letter-spacing:.4px}
+.shared ol{list-style:none;margin:0;padding:0;font-size:14px;line-height:1.9}
+.shared li{display:flex;gap:8px}
+.shared li b{color:var(--amber);font-weight:600;flex:none}
+.subs{list-style:none;margin:0;padding:0}
+.sub{padding:12px 0;border-top:1px solid var(--rule)}
+.sub:last-child{border-bottom:1px solid var(--rule)}
+.sub-q{display:flex;gap:10px;align-items:baseline;font-size:15.5px;line-height:1.5;margin-bottom:9px}
+.sub-q i{font-style:normal;color:var(--faint);font-size:13px;flex:none;width:16px}
+.sub-opts{display:flex;flex-wrap:wrap;gap:6px;padding-left:26px}
+.chip{min-width:44px;height:44px;padding:0 12px;border:1px solid var(--rule);border-radius:3px;font-size:13.5px;color:var(--ink);display:inline-flex;align-items:center;justify-content:center}
+.chip:hover{border-color:var(--amber)}
+.chip.sel{background:var(--blue);border-color:var(--blue);color:#fff}
+.chip.right{border-color:var(--green);color:var(--green);background:var(--green-wash)}
+.chip.wrong{border-color:var(--red);color:var(--red);background:#FDF1EE;text-decoration:line-through}
+.chip:disabled{cursor:default;opacity:.85}
+
+/* import */
+.paste{border:1px solid var(--rule);background:#fff;padding:14px 16px;font:400 13.5px/1.85 ui-monospace,SFMono-Regular,Menlo,Consolas,"Noto Sans Mono CJK SC",monospace;color:var(--ink);height:210px;overflow:auto;white-space:pre-wrap;margin-bottom:14px}
+.field{margin-bottom:16px;max-width:520px}
+.field label{display:block;font-size:13px;color:var(--mute);margin-bottom:6px}
+.select,.input{width:100%;height:42px;border:1px solid var(--rule);background:#fff;border-radius:3px;padding:0 12px;font:inherit;font-size:14.5px;color:var(--ink)}
+.select:focus,.input:focus{outline:2px solid var(--blue-wash);border-color:var(--blue)}
+.warn{display:flex;align-items:center;gap:14px;padding:12px 16px;background:#FBEBDD;border-left:2px solid var(--orange);font-size:14px;color:#8C4E1D;margin:6px 0 20px}
+.warn span{flex:1;min-width:0}
+.warn .btn{margin-left:auto;flex:none}
+.warn.ok{background:var(--green-wash);border-left-color:var(--green);color:#2F6B41}
+.warn b{font-weight:600;color:#7A3F13}
+.rev-list{list-style:none;margin:0;padding:0}
+.rev{padding:16px 0;border-top:1px solid var(--rule);display:grid;grid-template-columns:26px minmax(0,1fr) 120px;gap:14px;align-items:start}
+.rev:last-child{border-bottom:1px solid var(--rule)}
+.rev .no{font-size:13px;color:var(--faint);padding-top:3px;font-variant-numeric:tabular-nums}
+.rev .body{min-width:0}
+.rev .stem{font-size:15px;line-height:1.6;color:var(--ink);margin-bottom:6px}
+.rev .optsline{font-size:13px;color:var(--mute);line-height:1.7}
+.rev .ans{height:34px;width:100%;border:1px solid var(--rule);border-radius:3px;padding:0 10px;font:inherit;font-size:14px;background:#fff;color:var(--ink);text-align:center;letter-spacing:2px}
+.rev .ans.miss{border-color:var(--red);background:#FDF1EE;color:var(--red)}
+.rev .ans.miss::placeholder{color:var(--red);letter-spacing:0;font-size:12.5px}
+.rev .acts{grid-column:2/4;display:flex;gap:14px;font-size:12.5px;color:var(--mute);margin-top:8px}
+.rev .acts button:hover{color:var(--orange)}
+.rev .acts .del:hover{color:var(--red)}
+.tiny-type{font-size:11.5px;color:var(--mute);border:1px solid var(--rule);border-radius:3px;height:20px;display:inline-flex;align-items:center;padding:0 5px;margin-right:8px}
+
+/* entry form */
+.form-grid{display:grid;gap:14px;max-width:700px;margin-top:4px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.opt-row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.opt-row .lt{width:20px;font-size:14px;color:var(--mute);font-weight:600}
+.opt-row .input{flex:1}
+.opt-row .pick{width:40px;height:40px;border:1px solid var(--rule);border-radius:3px;display:grid;place-items:center;font-size:12px;color:var(--mute)}
+.opt-row .pick.on{background:var(--blue);border-color:var(--blue);color:#fff}
+textarea.input{height:66px;padding:10px 12px;line-height:1.65;resize:vertical}
+
+/* backup */
+.stack{display:grid;gap:26px;max-width:720px}
+.panel{border-top:1px solid var(--rule);padding-top:20px}
+.panel h2{font-size:19px;font-weight:600;color:var(--ink2);margin:0 0 6px}
+.panel p{font-size:14px;line-height:1.75;color:var(--mute);margin:0 0 14px;max-width:58ch}
+.install{display:flex;gap:14px;align-items:flex-start;background:var(--paper2);padding:16px 18px}
+.install svg{flex:none;color:var(--orange);margin-top:2px}
+.install p{margin:0;font-size:13.5px;line-height:1.75;color:var(--mute)}
+.install p b{color:var(--ink2)}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,14px);background:#2C2827;color:#FDFAF5;font-size:13.5px;padding:11px 18px;border-radius:4px;opacity:0;pointer-events:none;transition:.22s;z-index:60}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media(max-width:1180px){
+  .shell{grid-template-columns:198px minmax(0,1fr) 176px}
+  .content{padding:28px 30px 80px}
+  .rail-right{padding:26px 14px 40px}
+  .row .meta .sch{width:120px}
+}
+@media(max-width:960px){
+  .shell{grid-template-columns:190px minmax(0,1fr)}
+  .rail-right{display:none}
+  .row .meta .sch{width:auto}
+}
+@media(max-width:760px){
+  .topbar{height:52px;padding:0 14px;gap:0}
+  .brand{margin-right:8px;font-size:16px}
+  .brand span{display:none}
+  .nav button{height:52px;padding:0 10px;font-size:14px}
+  .nav button svg{display:none}
+  .topbar-right{display:none}
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .rail-left{display:none}
+  .content{padding:22px 18px 64px}
+  h1{font-size:28px}
+  .qstem{font-size:21px}
+  .row{flex-wrap:wrap;gap:4px 12px}
+  .row .meta{width:100%;padding-left:22px}
+  .sched-legend div{font-size:9.5px;white-space:nowrap}
+
+  .sched{margin-top:18px}
+  .match{grid-template-columns:minmax(0,1fr);gap:20px}
+  .rev{grid-template-columns:20px minmax(0,1fr)}
+  .rev .ans{grid-column:2}
+}
+</style>
+</head>
+<body data-view="home">
+
+<header class="topbar">
+  <a class="brand" href="#" data-go="home">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="3.5" y="6.5" width="12" height="14" rx="1.5" stroke="#326CE5" stroke-width="1.5"/>
+      <path d="M7.5 3.5h13v14" stroke="#D37035" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M7 13l2.4 2.4L15 10" stroke="#326CE5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>Knowledge Keeper</span>
+  </a>
+  <nav class="nav">
+    <button class="on" data-go="home">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2.5 3.5h4.2v9H2.5zM9.3 3.5h4.2v9H9.3z" stroke="currentColor" stroke-width="1.2"/></svg>题库</button>
+    <button data-go="import">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 10.5V2.6M5 5.6 8 2.6l3 3M2.5 10v3.4h11V10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>导入</button>
+    <button data-go="entry">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2.5 12.2l8-8 1.9 1.9-8 8-2.4.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>录入</button>
+    <button data-go="backup">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2.5 3.2h11v9.6h-11zM5.4 3.2v3.4h5.2V3.2" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>备份</button>
+  </nav>
+  <div class="topbar-right">
+    <span>10月14日 星期二</span><i class="dot-sep"></i><span>今天到期 <b class="num" id="dueTotal" style="color:var(--orange);font-weight:600">6</b> 道</span>
+  </div>
+</header>
+
+<div class="shell">
+  <!-- ============ LEFT RAIL ============ -->
+  <aside class="rail-left">
+    <div class="rail-head">
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M7.5 2 3.5 6l4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      收起分组
+    </div>
+    <ul class="tree" id="tree"></ul>
+  </aside>
+
+  <!-- ============ CONTENT ============ -->
+  <main class="content">
+
+    <!-- ---------- HOME ---------- -->
+    <section class="view on" id="v-home">
+      <div class="crumb">题库 <span>/</span> 全部分组</div>
+      <h1>我的题库</h1>
+      <p class="lede">四个分组，<b class="num" id="totalQ">25</b> 道题。做错的题会按 1、2、4、7、15、30 天重新出现，直到你连着答对最后一次。</p>
+      <div class="pills">
+        <span class="pill o"><b class="num" id="dueHome">6</b> 道今天到期</span>
+        <span class="pill"><b class="num" id="schedHome">14</b> 道在复习中</span>
+        <span class="pill g">上次备份 3 天前</span>
+      </div>
+      <hr class="rule">
+      <ul class="dotlist" id="homeGroups"></ul>
+    </section>
+
+    <!-- ---------- GROUP ---------- -->
+    <section class="view" id="v-group">
+      <div class="crumb" id="gCrumb"><a href="#" data-go="home">我的题库</a><span>/</span>计算机组成原理</div>
+      <h1 id="gTitle">计算机组成原理</h1>
+      <p class="lede" id="gLede"></p>
+      <div class="pills" id="gPills"></div>
+      <div class="sched">
+        <div class="sched-h" id="schedH">排期分布</div>
+        <div class="ruler" id="ruler"></div>
+        <div class="sched-legend">
+          <div>1 天</div><div>2 天</div><div>4 天</div><div>7 天</div><div>15 天</div><div>30 天</div><div class="rest">完成复习</div><div class="rest">未排期</div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <button class="btn primary" data-go="practice">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M2.5 1.6 10 6l-7.5 4.4z"/></svg>
+          开始练习</button>
+        <span class="hintline" id="gHint"></span>
+        <span class="grow"></span>
+        <button class="switch" id="favOnly"><i></i>只看收藏</button>
+      </div>
+      <hr class="rule">
+      <ul class="dotlist" id="qlist"></ul>
+    </section>
+
+    <!-- ---------- PRACTICE ---------- -->
+    <section class="view" id="v-practice">
+      <div class="crumb" id="pCrumb"><a href="#" data-go="home">我的题库</a><span>/</span><a href="#" data-go="group">计算机组成原理</a><span>/</span>练习</div>
+      <div class="practice-head">
+        <span class="num" id="pcount">第 3 / 10</span>
+        <span class="bar"><i></i></span>
+        <span>到期题 <span class="num" id="pDueLeft" style="color:var(--orange)">2</span> 道未做</span>
+        <span class="grow" style="flex:1"></span>
+        <button class="btn ghost small" data-go="group">退出练习</button>
+      </div>
+
+      <!-- single / multiple / truefalse -->
+      <div id="pSingle">
+        <div class="qlabel">
+          <span class="qtype" id="ptype">单选题</span>
+          <span id="pHintLine">四个选项，选一个再提交</span>
+          <button class="favbtn" id="pFav" aria-pressed="false">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>
+            <span id="pFavText">收藏</span>
+          </button>
+        </div>
+        <h2 class="qstem" id="pStem">在 8 位补码表示中，能表示的最小整数是</h2>
+        <ul class="opts" id="pOpts"></ul>
+        <div class="submit-row">
+          <button class="btn primary" id="pSubmit" disabled>提交</button>
+          <span class="hintline" id="pHint">选一个再提交</span>
+        </div>
+        <div class="feedback" id="pFb">
+          <div class="fb-head" id="pFbHead">答对</div>
+          <div class="fb-body" id="pFbBody"></div>
+          <div class="fb-exp" id="pFbExp"></div>
+          <div class="fb-next"><button class="btn small" id="pNext">下一题</button></div>
+        </div>
+      </div>
+
+      <!-- matching -->
+      <div id="pMatch" style="display:none">
+        <div class="qlabel"><span class="qtype">匹配题</span><span>四个子题共用一组选项，逐个提交</span></div>
+        <h2 class="qstem">把下列术语与它的编码方式对应起来</h2>
+        <div class="match">
+          <div class="shared">
+            <h3>共用选项</h3>
+            <ol>
+              <li><b>A</b><span>原码</span></li>
+              <li><b>B</b><span>反码</span></li>
+              <li><b>C</b><span>补码</span></li>
+              <li><b>D</b><span>移码</span></li>
+            </ol>
+          </div>
+          <ul class="subs" id="subs"></ul>
+        </div>
+        <div class="submit-row">
+          <button class="btn primary" id="mSubmit" disabled>提交</button>
+          <span class="hintline" id="mHint">四个子题都选完才能提交</span>
+        </div>
+        <div class="feedback" id="mFb">
+          <div class="fb-head" id="mFbHead">答对</div>
+          <div class="fb-body" id="mFbBody"></div>
+          <div class="fb-next"><button class="btn small" data-go="group">回到题目列表</button></div>
+        </div>
+        <p style="margin-top:24px"><button class="btn ghost small" id="backSingle">← 回到单选题</button></p>
+      </div>
+    </section>
+
+    <!-- ---------- IMPORT ---------- -->
+    <section class="view" id="v-import">
+      <div class="crumb"><a href="#" data-go="home">我的题库</a><span>/</span>导入</div>
+      <h1>导入题目</h1>
+      <p class="lede">把 PDF、Word、Excel 里的题，或者从网页复制的文本交给它。解析结果先进校对页，逐题改完再写进分组——解析错了不会直接进题库。</p>
+      <div class="pills">
+        <span class="pill">支持 .pdf .docx .xlsx .xls</span>
+        <span class="pill o">.doc 需先另存为 .docx</span>
+      </div>
+      <hr class="rule">
+
+      <div id="importStep1">
+        <div class="toolbar" style="margin:0 0 14px">
+          <button class="btn" id="pickFile">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 10.5V2.6M5 5.6 8 2.6l3 3M2.5 10v3.4h11V10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            从「文件」选择</button>
+          <span class="hintline">或直接粘贴文本</span>
+        </div>
+        <div class="paste" contenteditable="false">1. 在 8 位补码表示中，能表示的最小整数是
+A. −128　B. −127　C. −256　D. 127
+答案：A
+解析：8 位补码的范围是 −128 ~ +127，1000 0000 表示 −128。
+
+2. 下列关于 IEEE 754 单精度浮点数的说法，正确的有
+A. 符号位 1 位　B. 阶码 8 位，采用移码　C. 尾数 23 位，隐含最高位 1　D. 能精确表示 0.1
+答案：ABC
+
+3. 补码的减法运算可以转换为加法运算。
+答案：√
+
+4. 把下列术语与它的编码方式对应起来
+共用选项：A 原码　B 反码　C 补码　D 移码
+1. 0 有两种表示形式的是（多选）
+2. 表示范围最大的是（单选）
+答案：1 AB　2 C</div>
+        <div class="field">
+          <label>放进哪个分组</label>
+          <select class="select" id="targetGroup">
+            <option>错题集</option>
+            <option selected>计算机组成原理</option>
+            <option>教育心理学</option>
+            <option>英语长难句</option>
+            <option>＋ 新建分组…</option>
+          </select>
+        </div>
+        <button class="btn primary" id="toReview">开始校对</button>
+        <span class="hintline" style="margin-left:12px">识别到 12 道题</span>
+      </div>
+
+      <div id="importStep2" style="display:none">
+        <div class="warn">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2.2 14.4 13.4H1.6z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6.4v3.2M8 11.6v.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          <span id="warnText">识别到 <b class="num">12</b> 道题，答案 <b class="num">11</b> 个。第 7 题缺答案，标红了。</span>
+          <button class="btn primary small" id="commit" disabled>写入 12 道题</button>
+        </div>
+        <ul class="rev-list" id="revList"></ul>
+        <div class="toolbar" style="margin-top:20px">
+          <button class="btn ghost small" id="cancelReview">← 重新粘贴</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- ENTRY ---------- -->
+    <section class="view" id="v-entry">
+      <div class="crumb"><a href="#" data-go="home">我的题库</a><span>/</span>录入</div>
+      <h1>录入一道题</h1>
+      <p class="lede">文件里没有的题，用这个表单补进来。录入不改动任何已有题目的排期。</p>
+      <hr class="rule">
+      <div class="form-grid">
+        <div class="two">
+          <div class="field" style="margin:0">
+            <label>题型</label>
+            <select class="select"><option>单选题</option><option>多选题</option><option>判断题</option><option>匹配题</option></select>
+          </div>
+          <div class="field" style="margin:0">
+            <label>放进哪个分组</label>
+            <select class="select"><option>计算机组成原理</option><option>错题集</option><option>教育心理学</option><option>英语长难句</option></select>
+          </div>
+        </div>
+        <div class="field" style="margin:0">
+          <label>题干</label>
+          <textarea class="input" placeholder="例如：定点数补码算术右移一位时，符号位如何处理？"></textarea>
+        </div>
+        <div class="field" style="margin:0">
+          <label>选项（点右侧方框标出正确答案）</label>
+          <div class="opt-row"><span class="lt">A</span><input class="input" value=""><button class="pick">正确</button></div>
+          <div class="opt-row"><span class="lt">B</span><input class="input" value=""><button class="pick">正确</button></div>
+          <div class="opt-row"><span class="lt">C</span><input class="input" value=""><button class="pick">正确</button></div>
+          <div class="opt-row"><span class="lt">D</span><input class="input" value=""><button class="pick">正确</button></div>
+          <button class="btn ghost small">＋ 再加一个选项</button>
+        </div>
+        <div class="field" style="margin:0">
+          <label>解析（可空）</label>
+          <textarea class="input" placeholder="源文件里有解析就填在这里，练习时会显示"></textarea>
+        </div>
+        <div><button class="btn primary">保存到题库</button></div>
+      </div>
+    </section>
+
+    <!-- ---------- BACKUP ---------- -->
+    <section class="view" id="v-backup">
+      <div class="crumb"><a href="#" data-go="home">我的题库</a><span>/</span>备份与恢复</div>
+      <h1>备份与恢复</h1>
+      <p class="lede">题库只存在这台设备的浏览器里。浏览器清理存储、换设备、误删分组，都靠这个 JSON 文件兜底。</p>
+      <div class="pills"><span class="pill o">上次备份 3 天前</span><span class="pill" id="backupStats">25 道题 · 120 条作答</span></div>
+      <hr class="rule">
+      <div class="stack">
+        <div class="panel">
+          <h2>导出备份</h2>
+          <p>一个 JSON 文件，包含分组、题目、作答记录、排期状态和收藏。导出的同时会更新「上次备份」的时间。</p>
+          <button class="btn primary" id="doBackup">导出备份文件</button>
+        </div>
+        <div class="panel">
+          <h2>从备份恢复</h2>
+          <p>用一个备份文件整库替换当前题库。当前的分组、题目和作答记录都会消失，不能撤销。</p>
+          <button class="btn" id="doRestore">选择备份文件</button>
+        </div>
+        <div class="panel">
+          <h2>装到 iPad 主屏幕</h2>
+          <div class="install">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="15" height="15" rx="3.5" stroke="currentColor" stroke-width="1.4"/><path d="M10 6v8M6.6 10.4 10 13.8l3.4-3.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <p>在 Safari 里点「分享」，选<b>添加到主屏幕</b>。之后从桌面图标打开是全屏无地址栏的，<b>也不会被 Safari 按 7 天未访问清理存储</b>。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ RIGHT RAIL ============ -->
+  <aside class="rail-right">
+    <div class="rr-block" data-rail="home">
+      <div class="rr-h">排期</div>
+      <p class="rr-note">做错的题依次按 <b>1、2、4、7、15、30</b> 天重新出现。答对进下一格，答错回到第一格。</p>
+      <div class="rr-scale"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div>
+      <p class="rr-note">从没做错过的题不排期，只跟着轮次出现。</p>
+    </div>
+    <div class="rr-block" data-rail="home">
+      <div class="rr-h">存储</div>
+      <p class="rr-note">数据只在这台设备的浏览器里，没有账号，也不上传。</p>
+      <p class="rr-note" style="color:var(--ink2)">上次备份：3 天前</p>
+    </div>
+
+    <div class="rr-block" data-rail="group">
+      <div class="rr-h"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M3.5 2.4 13 8l-9.5 5.6z"/></svg>本轮</div>
+      <p class="rr-note" id="railRound1">到期 3 道按到期日从早到晚排在前面，其余 7 道打乱跟上。</p>
+      <p class="rr-note" id="railRound2">一轮 10 道，做完自动重新打乱，不记录中断位置。</p>
+    </div>
+    <div class="rr-block" data-rail="group">
+      <div class="rr-h">分组</div>
+      <button class="rr-link mut">重命名</button>
+      <button class="rr-link mut" id="railDel">删除分组（连带 10 道题）</button>
+    </div>
+
+    <div class="rr-block" data-rail="practice">
+      <div class="rr-h">这道题</div>
+      <p class="rr-note" id="railStage">第 <b>3</b> 个间隔，10 月 12 日到期，已逾期 2 天。</p>
+      <div class="rr-scale" id="railScale"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div>
+      <p class="rr-note" id="railHist">历史：<b>5 对 2 错</b>。这次答对进第 4 格（7 天），答错回到第 1 格。</p>
+    </div>
+    <div class="rr-block" data-rail="practice">
+      <div class="rr-h">示例</div>
+      <button class="rr-link" id="toMatch">看一道匹配题</button>
+    </div>
+
+    <div class="rr-block" data-rail="import">
+      <div class="rr-h">校对</div>
+      <p class="rr-note">题型自动推断：答案含两个以上字母算多选，选项是「正确 / 错误」或答案是 √ × 算判断，有共用选项块算匹配题。</p>
+      <p class="rr-note">推断错了就在校对页改，改完再写入。缺答案的题会一直标红，写入按钮会拦住。</p>
+    </div>
+
+    <div class="rr-block" data-rail="entry">
+      <div class="rr-h">录入</div>
+      <p class="rr-note">匹配题在题型里选「匹配题」，会多出共用选项和子题两块。</p>
+      <p class="rr-note">编辑已有题目的内容不会改动它的排期。</p>
+    </div>
+
+    <div class="rr-block" data-rail="backup">
+      <div class="rr-h">存储</div>
+      <p class="rr-note">浏览器清理存储后题库会消失，定期导出一份到「文件」app 里。</p>
+      <p class="rr-note" style="color:var(--ink2)">上次备份：3 天前</p>
+    </div>
+  </aside>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- data：四个分组，页面上每个数字都从这里算 ---------------- */
+const TODAY = 14;   // 10 月 14 日
+const LIB = [
+  {name:'错题集', qs:[
+    {t:'单选题', stem:'「不愤不启，不悱不发」这句话出自哪部典籍', stage:1, due:13, w:1, r:2, fav:1},
+    {t:'多选题', stem:'下列属于行政处罚种类的有', stage:4, due:22, w:2, r:6},
+    {t:'判断题', stem:'行政诉讼中，被告对作出的行政行为负有举证责任。', stage:7, w:3, r:8},
+    {t:'单选题', stem:'「法律不溯及既往」体现的是哪一项原则', stage:0, w:0, r:3},
+    {t:'匹配题', stem:'把下列法律与它的制定机关对应起来', stage:2, due:16, w:1, r:1, fav:1},
+  ]},
+  {name:'计算机组成原理', qs:[
+    {t:'单选题', stem:'在 8 位补码表示中，能表示的最小整数是', stage:3, due:12, w:2, r:5, fav:1},
+    {t:'多选题', stem:'下列关于 IEEE 754 单精度浮点数的说法，正确的有', stage:0, w:0, r:6},
+    {t:'判断题', stem:'补码的减法运算可以转换为加法运算。', stage:7, w:4, r:9},
+    {t:'匹配题', stem:'把下列术语与它的编码方式对应起来', stage:1, due:13, w:1, r:2, fav:1},
+    {t:'单选题', stem:'定点数补码算术右移一位时，符号位如何处理？', stage:2, due:18, w:3, r:3},
+    {t:'多选题', stem:'以下属于组合逻辑电路的有', stage:0, w:0, r:2},
+    {t:'单选题', stem:'指令周期中，取指阶段完成的工作是', stage:1, due:14, w:1, r:1},
+    {t:'多选题', stem:'影响流水线性能的因素有', stage:7, w:2, r:7},
+    {t:'单选题', stem:'Cache 与主存之间的地址映射方式不包括', stage:0, w:0, r:1},
+    {t:'判断题', stem:'IEEE 754 单精度浮点数的尾数隐含最高位 1。', stage:6, due:30, w:1, r:8},
+  ]},
+  {name:'教育心理学', qs:[
+    {t:'单选题', stem:'皮亚杰认为儿童开始具备守恒概念是在', stage:5, due:29, w:1, r:5},
+    {t:'多选题', stem:'维果茨基理论的核心概念包括', stage:1, due:15, w:1, r:1},
+    {t:'判断题', stem:'负强化就是惩罚。', stage:7, w:4, r:6},
+    {t:'单选题', stem:'马斯洛需要层次理论中最高层是', stage:0, w:0, r:2},
+    {t:'多选题', stem:'下列属于内部动机的有', stage:0, w:0, r:1},
+  ]},
+  {name:'英语长难句', qs:[
+    {t:'单选题', stem:'What he said at the meeting surprised everyone. 中 What 引导的是', stage:1, due:13, w:2, r:1},
+    {t:'判断题', stem:'非限制性定语从句可以用 that 引导。', stage:1, due:14, w:1, r:1},
+    {t:'单选题', stem:'Hardly had he arrived when the phone rang. 使用了什么结构', stage:2, due:17, w:1, r:3},
+    {t:'多选题', stem:'下列属于非谓语动词形式的有', stage:0, w:0, r:2},
+    {t:'单选题', stem:'It is important that he ____ present at the meeting.', stage:3, due:20, w:1, r:2},
+  ]},
+];
+
+const isDue    = q => q.stage>=1 && q.stage<=6 && q.due<=TODAY;
+const inReview = q => q.stage>=1 && q.stage<=6;
+const schedText= q => q.stage===0 ? '未排期'
+  : q.stage===7 ? '完成复习'
+  : '第 ' + q.stage + '/6 · ' + (q.due===TODAY ? '今天' : '10月'+q.due+'日') + '到期';
+function stat(g){
+  const r=g.qs.reduce((a,q)=>a+q.r,0), w=g.qs.reduce((a,q)=>a+q.w,0);
+  return {n:g.qs.length, r, w, rate: (r+w) ? Math.round(r/(r+w)*100) : 0,
+          due:g.qs.filter(isDue).length, fav:g.qs.filter(q=>q.fav).length,
+          sched:g.qs.filter(inReview).length};
+}
+let cur = 1;          // 当前分组：计算机组成原理
+let onlyFav = false;
+
+/* ---------------- router ---------------- */
+const body = document.body;
+function go(view){
+  body.dataset.view = view;
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on', v.id==='v-'+view));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on', b.dataset.go===view));
+  document.querySelectorAll('[data-rail]').forEach(b=>b.style.display = b.dataset.rail===view ? '' : 'none');
+  if(view==='practice') startRound();
+  try{ history.replaceState(null,'','#'+view); }catch(e){}
+  window.scrollTo({top:0});
+}
+
+document.addEventListener('click', e=>{
+  /* 左栏子项：全部 / 到期 / 收藏 */
+  const sub = e.target.closest('.tsub button');
+  if(sub){
+    const label = sub.textContent.trim();
+    const st = stat(LIB[cur]);
+    if(label.indexOf('到期')===0) toast('到期 ' + st.due + ' 道排在本轮最前面');
+    else if(label.indexOf('收藏')===0){ setFavOnly(true); toast('只看收藏的 ' + st.fav + ' 道'); }
+    else { setFavOnly(false); toast('显示全部 ' + st.n + ' 道'); }
+    return;
+  }
+  const t = e.target.closest('[data-go]');
+  if(!t) return;
+  e.preventDefault();
+  if(t.dataset.group !== undefined && t.dataset.group !== ''){
+    cur = +t.dataset.group;
+    renderTree(); renderGroup();
+  }
+  go(t.dataset.go);
+});
+
+/* ---------------- 渲染 ---------------- */
+function renderTree(){
+  document.getElementById('tree').innerHTML = LIB.map((g,gi)=>{
+    const st = stat(g);
+    return '<li>'
+      + '<button class="tg ' + (gi===cur?'cur':'') + '" data-group="' + gi + '" data-go="group">'
+      + '<span class="caret ' + (gi===cur?'open':'') + '">▸</span>' + g.name
+      + '<em class="' + (st.due?'':'zero') + '">' + st.due + '</em></button>'
+      + (gi===cur ? '<ul class="tsub">'
+          + '<li><button class="' + (onlyFav?'':'on') + '">全部 ' + st.n + '</button></li>'
+          + '<li><button>到期 ' + st.due + '</button></li>'
+          + '<li><button class="' + (onlyFav?'on':'') + '">收藏 ' + st.fav + '</button></li>'
+          + '</ul>' : '')
+      + '</li>';
+  }).join('');
+}
+
+function renderHome(){
+  const all = LIB.map(stat);
+  const n = all.reduce((a,s)=>a+s.n,0);
+  const due = all.reduce((a,s)=>a+s.due,0);
+  const attempts = LIB.flatMap(g=>g.qs).reduce((a,q)=>a+q.r+q.w,0);
+  document.getElementById('totalQ').textContent = n;
+  document.getElementById('dueTotal').textContent = due;
+  document.getElementById('dueHome').textContent = due;
+  document.getElementById('schedHome').textContent = all.reduce((a,s)=>a+s.sched,0);
+  const bs = document.getElementById('backupStats');
+  if(bs) bs.textContent = n + ' 道题 · ' + attempts + ' 条作答';
+  document.getElementById('homeGroups').innerHTML = LIB.map((g,gi)=>{
+    const st = stat(g);
+    return '<li><button class="row" data-go="group" data-group="' + gi + '">'
+      + '<span class="bullet">·</span><span class="title">' + g.name + '</span>'
+      + '<span class="meta"><span>' + st.n + ' 题</span>'
+      + '<span class="rate">正确率 ' + st.rate + '%<i><b style="width:' + st.rate + '%"></b></i></span>'
+      + '<span class="' + (st.due?'due':'done') + '">' + (st.due ? '到期 '+st.due : '无到期') + '</span></span>'
+      + '</button></li>';
+  }).join('');
+}
+
+function renderGroup(){
+  const g = LIB[cur], st = stat(g);
+  document.getElementById('gTitle').textContent = g.name;
+  document.getElementById('gCrumb').innerHTML = '<a href="#" data-go="home">我的题库</a><span>/</span>' + g.name;
+  document.getElementById('gLede').textContent =
+    st.n + ' 道题，总体正确率 ' + st.rate + '%，今天到期 ' + st.due + ' 道。到期题排在最前面，最久到期的先出。';
+  document.getElementById('gPills').innerHTML = ['单选题','多选题','判断题','匹配题']
+    .map(function(t){ const c=g.qs.filter(q=>q.t===t).length;
+      return c ? '<span class="pill">' + t + ' <b class="num">' + c + '</b></span>' : ''; }).join('');
+  const b=[0,0,0,0,0,0,0,0];
+  g.qs.forEach(q=>{ b[q.stage===0 ? 7 : (q.stage===7 ? 6 : q.stage-1)]++; });
+  const max = Math.max.apply(null, b.concat([1]));
+  document.getElementById('schedH').innerHTML = '排期分布 <b>' + st.n + ' 道题</b>';
+  document.getElementById('ruler').innerHTML = b.map(function(c,i){
+    const h = c ? Math.round(10 + (c/max)*30) : 2;
+    return '<div class="' + (i>=6?'rest':'') + ' ' + (c?'':'zero') + '">'
+      + '<span>' + (c||'') + '</span><i style="height:' + h + 'px"></i></div>';
+  }).join('');
+  const rr1 = document.getElementById('railRound1');
+  const rr2 = document.getElementById('railRound2');
+  if(rr1) rr1.textContent = st.due
+    ? '到期 ' + st.due + ' 道按到期日从早到晚排在前面，其余 ' + (st.n-st.due) + ' 道打乱跟上。'
+    : '这一组没有到期的题，' + st.n + ' 道全部打乱。';
+  if(rr2) rr2.textContent = '一轮 ' + st.n + ' 道，做完自动重新打乱，不记录中断位置。';
+  const rd = document.getElementById('railDel');
+  if(rd) rd.textContent = '删除分组（连带 ' + st.n + ' 道题）';
+  document.getElementById('gHint').textContent = st.due
+    ? '到期 ' + st.due + ' 道先出，其余 ' + (st.n-st.due) + ' 道打乱'
+    : '没有到期的题，' + st.n + ' 道全部打乱';
+  renderList();
+}
+
+function renderList(){
+  const g = LIB[cur];
+  const rows = g.qs.filter(q=>!onlyFav||q.fav).map(q=>
+    '<li><button class="row" data-go="practice">'
+    + '<span class="bullet">·</span>'
+    + '<span class="qtype">' + q.t + '</span>'
+    + '<span class="title">' + q.stem + '</span>'
+    + '<span class="meta">'
+    + '<span class="sch ' + (isDue(q)?'due':(q.stage===7?'done':'')) + '">' + schedText(q) + '</span>'
+    + '<span class="hist">' + q.w + ' 错 ' + q.r + ' 对</span>'
+    + '</span>'
+    + '</button></li>').join('');
+  const ul = document.getElementById('qlist');
+  ul.innerHTML = rows ||
+    '<li style="padding:26px 0;color:var(--mute);font-size:14px">这一组还没有收藏的题。</li>';
+}
+
+const favOnlyBtn = document.getElementById('favOnly');
+function setFavOnly(v){ onlyFav=v; favOnlyBtn.classList.toggle('on',v); renderList(); renderTree(); }
+favOnlyBtn.addEventListener('click', ()=>setFavOnly(!onlyFav));
+
+renderTree(); renderHome(); renderGroup();
+
+/* ---------------- practice: 三题型共用一个小引擎 ---------------- */
+const QBANK=[
+  {type:'单选题', group:'计算机组成原理', pos:3, multi:false,
+   stem:'在 8 位补码表示中，能表示的最小整数是',
+   hint:'四个选项，选一个再提交',
+   opts:[{l:'A',x:'−128'},{l:'B',x:'−127'},{l:'C',x:'−256'},{l:'D',x:'127'}],
+   ans:['A'],
+   ok:'正确答案 <b>A</b>。进入第 4 个间隔，7 天后（10 月 21 日）再出现。',
+   bad:'你选的是 <b>%s</b>，正确答案 <b>A</b>。回到第 1 个间隔，明天再出现。',
+   exp:'8 位补码的表示范围是 −128 ~ +127。−128 由 1000 0000 表示，没有对应的正数——这是补码比原码多出一个负数的原因。',
+   stage:3, stageText:'第 <b>3</b> 个间隔，10 月 12 日到期，已逾期 2 天。',
+   hist:'历史：<b>5 对 2 错</b>。这次答对进第 4 格（7 天），答错回到第 1 格。', fav:true},
+
+  {type:'多选题', group:'计算机组成原理', pos:4, multi:true,
+   stem:'下列关于 IEEE 754 单精度浮点数的说法，正确的有',
+   hint:'四个选项，可多选，全对才算对',
+   opts:[{l:'A',x:'符号位 1 位'},{l:'B',x:'阶码 8 位，采用移码'},{l:'C',x:'尾数 23 位，隐含最高位 1'},{l:'D',x:'能精确表示 0.1'}],
+   ans:['A','B','C'],
+   ok:'正确答案 <b>A B C</b>。这道题从没做错过，不排期，只跟着轮次出现。',
+   bad:'正确答案 <b>A B C</b>，你选了 <b>%s</b>。多选题漏选也算错——回到第 1 个间隔，明天再出现。',
+   exp:'0.1 在二进制里是无限循环小数，单精度只能存它的近似值。符号位 1 位、阶码 8 位（移码）、尾数 23 位（隐含最高位 1）是单精度的固定划分。',
+   stage:0, stageText:'从没做错过，没有排期。',
+   hist:'历史：<b>6 对 0 错</b>。答错才会开始按遗忘曲线排期。'},
+
+  {type:'判断题', group:'计算机组成原理', pos:5, multi:false,
+   stem:'补码的减法运算可以转换为加法运算。',
+   hint:'只有正确和错误两个选项',
+   opts:[{l:'√',x:'正确'},{l:'×',x:'错误'}],
+   ans:['√'],
+   ok:'正确答案 <b>√</b>。这是第 6 个间隔，通过后完成复习，不再排期。',
+   bad:'你选的是 <b>%s</b>，正确答案 <b>√</b>。完成复习后再答错，重新成为错题，回到第 1 个间隔。',
+   exp:'a − b = a + (−b)。补码下减法器可以省掉，硬件只留一个加法器。',
+   stage:6, stageText:'第 <b>6</b> 个间隔，10 月 30 日到期，已逾期 1 天。',
+   hist:'历史：<b>9 对 4 错</b>。这次答对就完成复习。', fav:false},
+  {type:'单选题', group:'错题集', pos:1, multi:false,
+   stem:'「不愤不启，不悱不发」这句话出自哪部典籍',
+   hint:'四个选项，选一个再提交',
+   opts:[{l:'A',x:'《论语》'},{l:'B',x:'《孟子》'},{l:'C',x:'《大学》'},{l:'D',x:'《中庸》'}],
+   ans:['A'],
+   ok:'正确答案 <b>A</b>。进入第 2 个间隔，2 天后（10 月 16 日）再出现。',
+   bad:'你选的是 <b>%s</b>，正确答案 <b>A</b>。回到第 1 个间隔，明天再出现。',
+   exp:'出自《论语·述而》。孔子说：不到他想弄明白而不得的时候，不去开导他；不到他想说而说不出来的时候，不去启发他。',
+   stage:1, stageText:'第 <b>1</b> 个间隔，10 月 13 日到期，已逾期 1 天。',
+   hist:'历史：<b>2 对 1 错</b>。这次答对进第 2 格（2 天），答错留在第 1 格。', fav:true},
+
+  {type:'单选题', group:'教育心理学', pos:1, multi:false,
+   stem:'皮亚杰认为儿童开始具备守恒概念是在',
+   hint:'四个选项，选一个再提交',
+   opts:[{l:'A',x:'感知运动阶段'},{l:'B',x:'前运算阶段'},{l:'C',x:'具体运算阶段'},{l:'D',x:'形式运算阶段'}],
+   ans:['C'],
+   ok:'正确答案 <b>C</b>。这是第 6 个间隔，通过后完成复习，不再排期。',
+   bad:'你选的是 <b>%s</b>，正确答案 <b>C</b>。回到第 1 个间隔，明天再出现。',
+   exp:'具体运算阶段（约 7–11 岁）的标志是守恒、可逆和去自我中心。前运算阶段还没有守恒。',
+   stage:5, stageText:'第 <b>5</b> 个间隔，10 月 29 日到期。',
+   hist:'历史：<b>5 对 1 错</b>。这次答对进第 6 格（30 天）。', fav:false},
+
+  {type:'单选题', group:'英语长难句', pos:1, multi:false,
+   stem:'What he said at the meeting surprised everyone. 中 What 引导的是',
+   hint:'四个选项，选一个再提交',
+   opts:[{l:'A',x:'定语从句'},{l:'B',x:'宾语从句'},{l:'C',x:'主语从句'},{l:'D',x:'表语从句'}],
+   ans:['C'],
+   ok:'正确答案 <b>C</b>。进入第 2 个间隔，2 天后（10 月 15 日）再出现。',
+   bad:'你选的是 <b>%s</b>，正确答案 <b>C</b>。回到第 1 个间隔，明天再出现。',
+   exp:'What he said 在句首作整个句子的主语，surprised 是谓语。换成 It 就是 It surprised everyone what he said——可见它是主语从句。',
+   stage:1, stageText:'第 <b>1</b> 个间隔，10 月 13 日到期，已逾期 1 天。',
+   hist:'历史：<b>1 对 2 错</b>。这次答对进第 2 格（2 天）。', fav:false},
+];
+
+let qIdx=0, picked=[], answered=false;
+const stemEl=document.getElementById('pStem'), optsEl=document.getElementById('pOpts'),
+      hintEl=document.getElementById('pHint'), labelEl=document.getElementById('pHintLine'),
+      typeEl=document.getElementById('ptype'), fb=document.getElementById('pFb');
+
+function renderQ(){
+  const q=QBANK[qIdx];
+  picked=[]; answered=false;
+  typeEl.textContent=q.type;
+  labelEl.textContent=q.hint;
+  stemEl.textContent=q.stem;
+  const g = LIB[cur], st = stat(g);
+  document.getElementById('pcount').textContent = '第 ' + q.pos + ' / ' + st.n;
+  document.querySelector('.practice-head .bar i').style.width = Math.round(q.pos/st.n*100)+'%';
+  document.getElementById('pCrumb').innerHTML =
+    '<a href="#" data-go="home">我的题库</a><span>/</span><a href="#" data-go="group">'+g.name+'</a><span>/</span>练习';
+  document.getElementById('pDueLeft').textContent = st.due;
+  optsEl.innerHTML=q.opts.map(o=>`<li><button class="opt" data-l="${o.l}"><span class="lt">${o.l}</span><span class="tx">${o.x}</span></button></li>`).join('');
+  optsEl.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>pickOpt(b.dataset.l)));
+  document.getElementById('pSubmit').disabled=true;
+  document.querySelector('#pSingle .submit-row').style.display='';
+  hintEl.textContent=q.multi?'可多选，全对才算对':'选一个再提交';
+  fb.classList.remove('on','bad');
+  document.getElementById('railStage').innerHTML=q.stageText;
+  document.getElementById('railHist').innerHTML=q.hist;
+  document.getElementById('railScale').innerHTML=Array.from({length:6},(_,i)=>`<i class="${i<q.stage?'on':''}"></i>`).join('');
+  syncFavBtn();
+}
+
+/* 收藏：做题时才决定，列表只显示结果 */
+function syncFavBtn(){
+  const on = !!QBANK[qIdx].fav;
+  const btn = document.getElementById('pFav');
+  btn.classList.toggle('on', on);
+  btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  document.getElementById('pFavText').textContent = on ? '已收藏' : '收藏';
+}
+document.getElementById('pFav').addEventListener('click', ()=>{
+  QBANK[qIdx].fav = !QBANK[qIdx].fav;
+  syncFavBtn();
+  const q = QBANK[qIdx];
+  const row = LIB[cur].qs.find(x=>x.stem===q.stem);
+  if(row) row.fav = q.fav ? 1 : 0;
+  renderList(); renderTree(); renderHome();
+  toast(q.fav ? '已收藏，练习时会在「只看收藏」里出现' : '已取消收藏');
+});
+
+function pickOpt(l){
+  if(answered) return;
+  const q=QBANK[qIdx];
+  if(q.multi){
+    picked = picked.includes(l) ? picked.filter(x=>x!==l) : [...picked,l].sort();
+  } else {
+    picked = picked[0]===l ? [] : [l];
+  }
+  optsEl.querySelectorAll('.opt').forEach(x=>x.classList.toggle('sel', picked.includes(x.dataset.l)));
+  document.getElementById('pSubmit').disabled = picked.length===0;
+  hintEl.textContent = picked.length ? '已选 '+picked.join(' ') : (q.multi?'可多选，全对才算对':'选一个再提交');
+}
+
+document.getElementById('pSubmit').addEventListener('click',()=>{
+  if(answered || !picked.length) return;
+  answered=true;
+  const q=QBANK[qIdx];
+  const ok = picked.join('')===q.ans.join('');
+  optsEl.querySelectorAll('.opt').forEach(x=>{
+    const l=x.dataset.l;
+    x.classList.remove('sel');
+    if(q.ans.includes(l)){ x.classList.add('right'); x.querySelector('.tx').insertAdjacentHTML('afterend','<span class="tick">正确答案</span>'); }
+    if(picked.includes(l) && !q.ans.includes(l)){ x.classList.add('wrong'); x.querySelector('.tx').insertAdjacentHTML('afterend','<span class="tick bad">你的选择</span>'); }
+  });
+  fb.classList.add('on'); fb.classList.toggle('bad', !ok);
+  document.getElementById('pFbHead').textContent = ok?'答对':'答错';
+  document.getElementById('pFbBody').innerHTML = ok ? q.ok : q.bad.replace('%s', picked.join(' '));
+  document.getElementById('pFbExp').innerHTML = '<b>解析</b>　'+q.exp;
+  document.querySelector('#pSingle .submit-row').style.display='none';
+});
+
+document.getElementById('pNext').addEventListener('click',()=>{
+  qIdx = (qIdx+1) % QBANK.length;
+  renderQ();
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+
+function startRound(){
+  const name = LIB[cur].name;
+  const i = QBANK.findIndex(q=>q.group===name);
+  qIdx = i >= 0 ? i : 0;
+  renderQ();
+}
+startRound();
+
+/* ---------------- practice: matching ---------------- */
+const SUBS = [
+  {q:'0 有两种表示形式的是', type:'多选', ans:'AB', multi:true},
+  {q:'表示范围最大的是', type:'单选', ans:'C', multi:false},
+  {q:'用于浮点数阶码的是', type:'单选', ans:'D', multi:false},
+  {q:'取反加一得到的是', type:'单选', ans:'C', multi:false},
+];
+const LETTERS = ['A','B','C','D'];
+const picks = SUBS.map(()=>[]);
+const subsEl = document.getElementById('subs');
+function renderSubs(locked){
+  subsEl.innerHTML = SUBS.map((s,i)=>`
+    <li class="sub">
+      <div class="sub-q"><i>${i+1}</i><span>${s.q}</span><span class="qtype" style="flex:none">${s.type}</span></div>
+      <div class="sub-opts">${LETTERS.map(L=>{
+        const sel = picks[i].includes(L);
+        let cls = 'chip' + (sel?' sel':'');
+        if(locked){
+          const isAns = s.ans.includes(L);
+          cls = 'chip' + (isAns?' right':'') + (!isAns && sel?' wrong':'');
+        }
+        return `<button class="${cls}" data-s="${i}" data-l="${L}" ${locked?'disabled':''}>${L}</button>`;
+      }).join('')}</div>
+    </li>`).join('');
+  subsEl.querySelectorAll('.chip:not([disabled])').forEach(b=>b.addEventListener('click',()=>{
+    const i = +b.dataset.s, L = b.dataset.l;
+    if(SUBS[i].multi){
+      picks[i] = picks[i].includes(L) ? picks[i].filter(x=>x!==L) : [...picks[i],L].sort();
+    } else {
+      picks[i] = picks[i][0]===L ? [] : [L];
+    }
+    renderSubs(false);
+    const done = picks.every(p=>p.length>0);
+    document.getElementById('mSubmit').disabled = !done;
+    document.getElementById('mHint').textContent = done ? '四个子题都选完了' : '还有子题没选';
+  }));
+}
+renderSubs(false);
+document.getElementById('mSubmit').addEventListener('click', ()=>{
+  const ok = SUBS.every((s,i)=>picks[i].join('')===s.ans);
+  renderSubs(true);
+  const fb = document.getElementById('mFb');
+  fb.classList.add('on'); fb.classList.toggle('bad', !ok);
+  document.getElementById('mFbHead').textContent = ok ? '答对' : '答错';
+  const wrongIdx = SUBS.map((s,i)=>picks[i].join('')===s.ans?null:i+1).filter(Boolean);
+  document.getElementById('mFbBody').innerHTML = ok
+    ? '四个子题全对。整道题算答对，进入第 2 个间隔，2 天后（10 月 16 日）再出现。'
+    : `第 <b>${wrongIdx.join('、')}</b> 个子题错了，整道题算答错——匹配题任一子题错就是整题错。回到第 1 个间隔，明天再出现。`;
+  document.querySelector('#pMatch .submit-row').style.display = 'none';
+});
+document.getElementById('toMatch').addEventListener('click',()=>{
+  document.getElementById('pSingle').style.display='none';
+  document.getElementById('pMatch').style.display='';
+  document.querySelector('#pMatch .submit-row').style.display = '';
+  document.getElementById('pcount').textContent = '第 4 / 10';
+  window.scrollTo({top:0});
+});
+document.getElementById('backSingle').addEventListener('click',()=>{
+  document.getElementById('pMatch').style.display='none';
+  document.getElementById('pSingle').style.display='';
+  document.getElementById('pcount').textContent = '第 3 / 10';
+  window.scrollTo({top:0});
+});
+
+/* ---------------- import / review ---------------- */
+const REV = [
+  {t:'单选题', stem:'在 8 位补码表示中，能表示的最小整数是', opts:'A −128　B −127　C −256　D 127', ans:'A'},
+  {t:'多选题', stem:'下列关于 IEEE 754 单精度浮点数的说法，正确的有', opts:'A 符号位 1 位　B 阶码 8 位，采用移码　C 尾数 23 位，隐含最高位 1　D 能精确表示 0.1', ans:'ABC'},
+  {t:'判断题', stem:'补码的减法运算可以转换为加法运算。', opts:'（无选项，判断题固定「正确 / 错误」）', ans:'√'},
+  {t:'匹配题', stem:'把下列术语与它的编码方式对应起来', opts:'共用选项 A 原码　B 反码　C 补码　D 移码 · 2 个子题', ans:'1 AB　2 C'},
+  {t:'单选题', stem:'定点数补码算术右移一位时，符号位如何处理？', opts:'A 补 0　B 保持符号位不变　C 取反　D 由溢出位决定', ans:'B'},
+  {t:'多选题', stem:'以下属于组合逻辑电路的有', opts:'A 编码器　B 译码器　C 触发器　D 加法器', ans:'ABD'},
+  {t:'单选题', stem:'Cache 与主存之间的地址映射方式不包括', opts:'A 直接映射　B 全相联　C 组相联　D 页式映射', ans:''},
+  {t:'判断题', stem:'IEEE 754 单精度浮点数的尾数隐含最高位 1。', opts:'（无选项，判断题固定「正确 / 错误」）', ans:'√'},
+  {t:'单选题', stem:'指令周期中，取指阶段完成的工作是', opts:'A 从主存取指令送到 IR　B 计算操作数地址　C 执行运算　D 写回结果', ans:'A'},
+  {t:'多选题', stem:'影响流水线性能的因素有', opts:'A 结构相关　B 数据相关　C 控制相关　D 编译优化', ans:'ABC'},
+  {t:'单选题', stem:'总线带宽的单位通常是', opts:'A MB/s　B MHz　C bit　D 字节', ans:'A'},
+  {t:'判断题', stem:'Cache 的命中率越高，平均访问时间越短。', opts:'（无选项，判断题固定「正确 / 错误」）', ans:'√'},
+];
+const revList = document.getElementById('revList');
+revList.innerHTML = REV.map((r,i)=>`
+  <li class="rev">
+    <span class="no">${String(i+1).padStart(2,'0')}</span>
+    <div class="body">
+      <div class="stem"><span class="tiny-type">${r.t}</span>${r.stem}</div>
+      <div class="optsline">${r.opts}</div>
+    </div>
+    <input class="ans ${r.ans?'':'miss'}" value="${r.ans}" placeholder="缺答案">
+    <div class="acts">
+      <button>编辑题干</button><button>改题型</button><button>拆分</button><button>与下一题合并</button>
+      <button class="del" style="margin-left:auto">删除</button>
+    </div>
+  </li>`).join('');
+
+document.getElementById('toReview').addEventListener('click',()=>{
+  document.getElementById('importStep1').style.display='none';
+  document.getElementById('importStep2').style.display='';
+  syncReview();
+  window.scrollTo({top:0});
+});
+document.getElementById('cancelReview').addEventListener('click',()=>{
+  document.getElementById('importStep1').style.display='';
+  document.getElementById('importStep2').style.display='none';
+  window.scrollTo({top:0});
+});
+function syncReview(){
+  const missing = [...document.querySelectorAll('#revList .ans')].filter(i=>!i.value.trim());
+  const bar = document.querySelector('.warn');
+  const btn = document.getElementById('commit');
+  const txt = document.getElementById('warnText');
+  missing.forEach(i=>i.classList.add('miss'));
+  document.querySelectorAll('#revList .ans').forEach(i=>{ if(i.value.trim()) i.classList.remove('miss'); });
+  btn.disabled = missing.length > 0;
+  bar.classList.toggle('ok', missing.length === 0);
+  txt.innerHTML = missing.length
+    ? '识别到 <b class="num">12</b> 道题，答案 <b class="num">'+(12-missing.length)+'</b> 个。第 '+(REV.findIndex(r=>!r.ans)+1)+' 题缺答案，标红了。'
+    : '识别到 <b class="num">12</b> 道题，答案 <b class="num">12</b> 个，都齐了。';
+}
+document.querySelectorAll('#revList .ans').forEach(i=>i.addEventListener('input', syncReview));
+document.getElementById('commit').addEventListener('click',()=>{
+  if(document.getElementById('commit').disabled){ toast('还有题缺答案，补上才能写入'); document.querySelector('.ans.miss')?.focus(); return; }
+  toast('已写入 12 道题到「计算机组成原理」');
+  go('group');
+});
+document.getElementById('pickFile').addEventListener('click',()=>toast('打开系统文件选择器（原型未接）'));
+document.getElementById('doBackup').addEventListener('click',()=>toast('已导出 KnowledgeKeeper-2026-10-14.json'));
+document.getElementById('doRestore').addEventListener('click',()=>toast('整库替换前会再确认一次（原型未接）'));
+
+/* ---------------- misc ---------------- */
+let toastTimer;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('on'), 2200);
+}
+document.querySelectorAll('.rail-head').forEach(h=>h.addEventListener('click',()=>toast('分组栏已收起（原型未接）')));
+
+const initial = (location.hash||'').replace('#','');
+const VIEWS = ['home','group','practice','import','entry','backup'];
+go(VIEWS.includes(initial) ? initial : body.dataset.view);
+window.addEventListener('hashchange', ()=>{
+  const h = (location.hash||'').replace('#','');
+  if(VIEWS.includes(h) && h !== body.dataset.view) go(h);
+});
+</script>
+</body>
+</html>
