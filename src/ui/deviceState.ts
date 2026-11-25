@@ -1,5 +1,6 @@
 /** Device-local UI state: never stored in the core or in backups. */
 const ENTRY_GROUP_KEY = 'kk.entry.groupId';
+const IMPORT_GROUP_KEY = 'kk.import.groupId';
 
 export function readEntryGroupId(): string | null {
   try {
@@ -12,6 +13,22 @@ export function readEntryGroupId(): string | null {
 export function writeEntryGroupId(groupId: string): void {
   try {
     window.localStorage.setItem(ENTRY_GROUP_KEY, groupId);
+  } catch {
+    // Storage can be unavailable in private mode; the form still works.
+  }
+}
+
+export function readImportGroupId(): string | null {
+  try {
+    return window.localStorage.getItem(IMPORT_GROUP_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function writeImportGroupId(groupId: string): void {
+  try {
+    window.localStorage.setItem(IMPORT_GROUP_KEY, groupId);
   } catch {
     // Storage can be unavailable in private mode; the form still works.
   }

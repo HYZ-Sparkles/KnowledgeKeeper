@@ -2,8 +2,9 @@ import type {
   Clock, Random, StorageAdapter, Group, GroupSummary, GroupTypeCounts,
   LibraryMeta, Question, QuestionInput, QuestionView, Schedule, Attempt,
   RoundItem, SubmittedAnswer, SubmitResult, SubQuestionResult,
-  ListQuestionsOptions,
+  ListQuestionsOptions, ReviewDraft,
 } from './types';
+import { draftAnswer, parseText, trueFalseOptions } from './internal/parseText';
 import { grade, gradeMatching } from './internal/grade';
 import { buildRound } from './internal/round';
 import { advance, localDay } from './internal/schedule';
@@ -24,6 +25,10 @@ function generateId(random: Random, prefix: string): string {
 }
 
 export interface Core {
+  /** Parse pasted text into a review draft; zero questions throws. */
+  importFromText(text: string): Promise<ReviewDraft>;
+  /** Validate the whole draft, then write it in import order. */
+  commitReview(draft: ReviewDraft, groupId: string): Promise<QuestionView[]>;
   listGroups(): Promise<GroupSummary[]>;
   getMeta(): Promise<LibraryMeta>;
   createQuestion(input: QuestionInput, groupId: string): Promise<QuestionView>;
@@ -72,6 +77,59 @@ export function createCore(deps: CoreDeps): Core {
   }
 
   return {
+    async importFromText(text: string): Promise<ReviewDraft> {
+      const draft = parseText(text);
+      if (draft.questions.length === 0) {
+        throw new Error('没有识别到题目，请粘贴带题号的文本，或到「录入」页手动添加。');
+      }
+      return draft;
+    },
+    async commitReview(
+      draft: ReviewDraft, groupId: string,
+    ): Promise<QuestionView[]> {
+      await ensureInitialized();
+      if (!(await storage.getGroups()).some((g) => g.id === groupId)) {
+        throw new Error('分组不存在');
+      }
+      if (draft.questions.length === 0) throw new Error('没有可写入的题目');
+      // Validate everything first: one bad row must leave the library untouched.
+      const inputs: QuestionInput[] = draft.questions.map((question, index) => {
+        if (!question.stem.trim()) {
+          throw new Error(`第 ${index + 1} 题题干不能为空`);
+        }
+        const { answer, valid } = draftAnswer(question);
+        if (!valid) {
+          throw new Error(`第 ${index + 1} 题答案缺失或不在选项范围内`);
+        }
+        return {
+          type: question.type,
+          stem: question.stem.trim(),
+          options: question.type === 'truefalse'
+            ? trueFalseOptions()
+            : question.options.map((option) => ({ ...option })),
+          answer,
+          explanation: question.explanation,
+          sharedOptions: null,
+          subQuestions: null,
+        };
+      });
+      let order = (await storage.getQuestions()).reduce(
+        (max, q) => Math.max(max, q.importOrder), 0);
+      const written: QuestionView[] = [];
+      for (const input of inputs) {
+        order += 1;
+        const question: Question = {
+          id: generateId(random, 'q'),
+          groupId,
+          ...editableFields(input),
+          favorite: false,
+          importOrder: order,
+        };
+        await storage.putQuestion(question);
+        written.push(toQuestionView(question, {}, []));
+      }
+      return written;
+    },
     async listGroups(): Promise<GroupSummary[]> {
       await ensureInitialized();
       const [groups, questions, schedules, attempts] = await Promise.all([

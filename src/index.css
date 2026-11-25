@@ -223,6 +223,61 @@
   }
   .form-missing { @apply text-[13px] text-orange m-0; }
   .form-invalid { @apply text-[13px] text-red m-0; }
+
+  /* 导入页：白底等宽粘贴框、常驻警示条与校对行。 */
+  .paste {
+    @apply block w-full h-[210px] px-4 py-[14px] mb-[14px] border
+           border-rule rounded-3 bg-white text-[13.5px] leading-[1.85]
+           text-ink resize-y whitespace-pre-wrap;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+      'Noto Sans Mono CJK SC', monospace;
+  }
+  .warn {
+    @apply flex items-center gap-[14px] px-4 py-3 my-[6px] mb-5
+           bg-orange-wash border-l-2 border-orange text-[14px]
+           leading-[1.7] text-[#8C4E1D];
+  }
+  .warn.ok { @apply bg-green-wash border-green text-[#2F6B41]; }
+  .warn > span { @apply flex-1 min-w-0; }
+  .warn .btn { @apply ml-auto flex-none; }
+  .review-bar {
+    @apply sticky z-10 flex items-center gap-[14px] px-4 py-3
+           top-topbar bg-orange-wash border-l-2 border-orange
+           border-b border-b-rule text-[14px] leading-[1.7]
+           text-[#8C4E1D];
+  }
+  .review-bar.ok { @apply bg-green-wash border-green text-[#2F6B41]; }
+  .review-bar > span { @apply flex-1 min-w-0; }
+  .review-bar b { @apply font-semibold text-[#7A3F13]; }
+  .review-bar .btn { @apply ml-auto flex-none; }
+  .review-bar button.jump {
+    @apply underline underline-offset-2 px-[2px] text-[#7A3F13];
+  }
+  .rev-list { @apply list-none m-0 p-0; }
+  .rev {
+    @apply grid gap-[14px] py-4 border-t border-rule items-start;
+    grid-template-columns: 26px minmax(0, 1fr) 120px;
+  }
+  .rev:last-child { @apply border-b; }
+  .rev .no { @apply pt-[3px] text-[13px] text-faint; }
+  .rev .body { @apply min-w-0; }
+  .rev .stem { @apply mb-[6px] text-t15 leading-[1.6] text-ink; }
+  .rev .optsline { @apply text-[13px] leading-[1.7] text-mute; }
+  .rev .ans {
+    @apply w-full h-[34px] px-[10px] rounded-3 border border-rule
+           bg-white text-[14px] text-center tracking-[2px];
+  }
+  .rev .ans.miss { @apply border-red bg-[#FDF1EE] text-red; }
+  .rev .ans.miss::placeholder { @apply text-red tracking-normal text-t12_5; }
+  .rev .acts {
+    @apply flex gap-[14px] mt-2 text-t12_5 text-mute;
+    grid-column: 2 / 4;
+  }
+  .rev .acts .del { @apply ml-auto text-red; }
+  .tiny-type {
+    @apply inline-flex items-center h-5 px-[5px] mr-2 rounded-3
+           border border-rule text-[11.5px] text-mute;
+  }
   .section-label { @apply text-[14px] font-semibold text-ink-2; }
   .sub-block { @apply py-[14px] border-t border-rule; }
   .sub-head { @apply flex items-center gap-[10px] flex-wrap mb-[10px]; }

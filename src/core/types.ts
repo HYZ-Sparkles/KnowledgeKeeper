@@ -48,6 +48,44 @@ export interface QuestionInput {
   subQuestions?: SubQuestion[] | null;
 }
 
+/** Why a review draft needs attention before it can be written. */
+export type ReviewWarningCode =
+  | 'ANSWER_COUNT_MISMATCH' | 'MISSING_ANSWER' | 'NO_QUESTIONS';
+
+export interface ReviewWarning {
+  code: ReviewWarningCode;
+  message: string;
+  /** One-based review-row positions, so the UI can scroll to the red rows. */
+  questionNumbers?: number[];
+  severity: 'warn' | 'error';
+}
+
+/**
+ * One import row. Editing (type change, answer fixes, later split/merge)
+ * happens in the UI and never goes back through the parser.
+ */
+export interface DraftQuestion {
+  draftId: string;
+  /** Original number in the pasted text, used by range answer notation. */
+  sourceNo: number;
+  type: QuestionType;
+  stem: string;
+  options: Option[];
+  /** UI-editable raw answer, e.g. "A", "ABC" or "√". */
+  answerText: string;
+  explanation: string;
+  missingAnswer: boolean;
+  /** Reserved for the matching-question importer (ticket 15). */
+  sharedOptions?: Option[] | null;
+  /** Reserved for the matching-question importer (ticket 15). */
+  subQuestions?: SubQuestion[] | null;
+}
+
+export interface ReviewDraft {
+  questions: DraftQuestion[];
+  warnings: ReviewWarning[];
+}
+
 /** A question with its derived state; counts are computed from attempts. */
 export interface QuestionView extends Question {
   schedule: Schedule;

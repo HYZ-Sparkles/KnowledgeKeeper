@@ -5,6 +5,7 @@ import { currentRoute, navigate, type Route } from './router';
 import Breadcrumb from './ui/Breadcrumb';
 import EntryView from './ui/EntryView';
 import GroupView from './ui/GroupView';
+import ImportView from './ui/ImportView';
 import PracticeView from './ui/PracticeView';
 import QuestionPage from './ui/QuestionPage';
 import { rulerCells, rulerNote } from './ui/scheduleCopy';
@@ -54,7 +55,8 @@ export default function App({ core }: { core: Core }) {
   return (
     <>
       <Topbar
-        active={effectiveRoute.name === 'entry' ? 'entry' : 'library'}
+        active={effectiveRoute.name === 'import'
+          ? 'import' : effectiveRoute.name === 'entry' ? 'entry' : 'library'}
         today={today}
         dueTotal={dueTotal}
       />
@@ -63,6 +65,13 @@ export default function App({ core }: { core: Core }) {
         <main className="content">
           {effectiveRoute.name === 'home' ? (
             <HomeView groups={groups ?? []} meta={meta} />
+          ) : effectiveRoute.name === 'import' ? (
+            <ImportView
+              core={core}
+              groups={groups ?? []}
+              showToast={showToast}
+              refreshGroups={refresh}
+            />
           ) : effectiveRoute.name === 'entry' ? (
             <EntryView
               core={core}
@@ -113,6 +122,7 @@ function Topbar({
 }: { active: string; today: string; dueTotal: number }) {
   const nav = [
     { key: 'library', label: '题库', hash: '#home' },
+    { key: 'import', label: '导入', hash: '#import' },
     { key: 'entry', label: '录入', hash: '#entry' },
   ];
   return (
@@ -220,6 +230,17 @@ function RightRail({
   }
   return (
     <aside className="rail-right">
+      {route.name === 'import' ? (
+        <div className="mb-[26px]">
+          <h2 className="text-t14 font-semibold text-ink-2 mb-[10px]">校对</h2>
+          <p className="text-t12_5 leading-[1.7] text-mute m-0">
+            答案有两个以上字母推断为多选题；选项写「正确 / 错误」或答案是判断符号推断为判断题，其余是单选题。
+          </p>
+          <p className="text-t12_5 leading-[1.7] text-mute m-0 mt-[6px]">
+            缺答案的题会一直标红并拦住写入，补齐后才能写进分组。
+          </p>
+        </div>
+      ) : null}
       {route.name === 'entry' ? (
         <div className="mb-[26px]">
           <h2 className="text-t14 font-semibold text-ink-2 mb-[10px]">录入</h2>
