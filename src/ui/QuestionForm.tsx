@@ -13,6 +13,8 @@ export interface QuestionFormProps {
   onRequestCreateGroup?: () => void;
   /** Extra bottom-row actions, e.g. the question page's cancel and delete. */
   extraActions?: ReactNode;
+  /** The review editor calls the submit action 「完成」 instead of 「保存」. */
+  submitLabel?: string;
 }
 
 interface SubFormState {
@@ -80,7 +82,7 @@ function makeState(value?: QuestionInput): FormState {
  */
 export default function QuestionForm({
   mode, initialValue, onSubmit, groups, groupId, onGroupChange,
-  onRequestCreateGroup, extraActions,
+  onRequestCreateGroup, extraActions, submitLabel,
 }: QuestionFormProps) {
   const [state, setState] = useState<FormState>(() => makeState(initialValue));
   const [answerCleared, setAnswerCleared] = useState(false);
@@ -527,7 +529,7 @@ export default function QuestionForm({
       )}
       <div className="flex items-center gap-[10px] flex-wrap">
         <button className="btn btn-primary" type="submit" disabled={missing.length > 0}>
-          {mode === 'create' ? '保存到题库' : '保存'}
+          {submitLabel ?? (mode === 'create' ? '保存到题库' : '保存')}
         </button>
         {extraActions}
       </div>

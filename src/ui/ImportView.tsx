@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Core } from '../core';
 import type {
-  DraftQuestion, GroupSummary, Option, QuestionType, ReviewDraft, SubQuestion,
+  DraftQuestion, GroupSummary, Option, QuestionInput, QuestionType,
+  ReviewDraft, SubQuestion,
 } from '../core/types';
 import { navigate } from '../router';
 import Breadcrumb from './Breadcrumb';
 import Dialog from './Dialog';
+import QuestionForm from './QuestionForm';
 import { readImportGroupId, writeImportGroupId } from './deviceState';
 import { defaultGroupId } from './entryGroups';
 
@@ -20,6 +22,24 @@ const TRUE_FALSE: Record<string, '√' | '×'> = {
   '√': '√', '对': '√', '正确': '√', 'T': '√',
   '×': '×', '错': '×', '错误': '×', 'F': '×',
 };
+
+const TRUE_FALSE_OPTIONS: Option[] = [
+  { letter: '√', text: '正确' },
+  { letter: '×', text: '错误' },
+];
+
+let nextDraftId = 1;
+
+/** Option letters re-flow after a merge, beyond Z if needed. */
+function letterAt(index: number): string {
+  let rest = index;
+  let letters = '';
+  do {
+    letters = String.fromCharCode(65 + (rest % 26)) + letters;
+    rest = Math.floor(rest / 26) - 1;
+  } while (rest >= 0);
+  return letters;
+}
 
 /** Same normalization the core applies before writing: uppercase, no spaces. */
 function normalizeAnswer(raw: string, type: QuestionType): string {
@@ -68,6 +88,78 @@ function matchingOptionsLine(
   return `共用选项 ${list} · ${subs?.length ?? 0} 个子题`;
 }
 
+function matchingAnswerText(subs: SubQuestion[]): string {
+  return subs
+    .map((sub, index) => sub.answer.length
+      ? `${index + 1} ${sub.answer.join('')}` : '')
+    .filter(Boolean)
+    .join('　');
+}
+
+/** Prefill the shared entry form from one review row. */
+function draftToInput(question: DraftQuestion): QuestionInput {
+  if (question.type === 'matching') {
+    return {
+      type: 'matching',
+      stem: question.stem,
+      options: [],
+      answer: [],
+      explanation: question.explanation,
+      sharedOptions: (question.sharedOptions ?? []).map((option) => ({ ...option })),
+      subQuestions: (question.subQuestions ?? []).map((sub) => ({
+        ...sub, answer: [...sub.answer],
+      })),
+    };
+  }
+  const normalized = normalizeAnswer(question.answerText, question.type);
+  return {
+    type: question.type,
+    stem: question.stem,
+    options: question.type === 'truefalse'
+      ? TRUE_FALSE_OPTIONS.map((option) => ({ ...option }))
+      : question.options.map((option) => ({ ...option })),
+    answer: question.type === 'truefalse'
+      ? (normalized ? [normalized] : [])
+      : [...normalized].filter((letter) =>
+        question.options.some((option) => option.letter === letter)),
+    explanation: question.explanation,
+    sharedOptions: null,
+    subQuestions: null,
+  };
+}
+
+/** Fold a completed form back into the same row and draft id. */
+function inputToDraft(input: QuestionInput, original: DraftQuestion): DraftQuestion {
+  if (input.type === 'matching') {
+    const subs: SubQuestion[] = (input.subQuestions ?? []).map((sub) => ({
+      ...sub, answer: [...sub.answer],
+    }));
+    const next: DraftQuestion = {
+      ...original,
+      type: 'matching',
+      stem: input.stem,
+      options: [],
+      answerText: matchingAnswerText(subs),
+      explanation: input.explanation,
+      sharedOptions: (input.sharedOptions ?? []).map((option) => ({ ...option })),
+      subQuestions: subs,
+    };
+    return { ...next, missingAnswer: answerMissing(next) };
+  }
+  const next: DraftQuestion = {
+    ...original,
+    type: input.type,
+    stem: input.stem,
+    options: input.type === 'truefalse'
+      ? [] : input.options.map((option) => ({ ...option })),
+    answerText: input.answer.join(''),
+    explanation: input.explanation,
+    sharedOptions: null,
+    subQuestions: null,
+  };
+  return { ...next, missingAnswer: answerMissing(next) };
+}
+
 export default function ImportView({
   core, groups, showToast, refreshGroups,
 }: {
@@ -84,6 +176,16 @@ export default function ImportView({
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
   const [busy, setBusy] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [splittingIndex, setSplittingIndex] = useState<number | null>(null);
+  const [splitStem, setSplitStem] = useState('');
+  const splitRef = useRef<HTMLTextAreaElement>(null);
+
+  // Keep the form's prefill stable while its own fields are being edited.
+  const editingInitial = useMemo(
+    () => editingIndex === null ? null : draftToInput(rows[editingIndex]),
+    [editingIndex, rows],
+  );
 
   useEffect(() => {
     if (groups.length === 0) return;
@@ -110,6 +212,74 @@ export default function ImportView({
   function jumpToRow(number: number) {
     document.getElementById(`review-row-${number}`)
       ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function openEditor(index: number) {
+    setSplittingIndex(null);
+    setEditingIndex(index);
+  }
+
+  function openSplit(index: number) {
+    setEditingIndex(null);
+    setSplitStem(rows[index].stem);
+    setSplittingIndex(index);
+  }
+
+  function splitRow(index: number) {
+    const caret = splitRef.current?.selectionStart ?? splitStem.length;
+    const before = splitStem.slice(0, caret).trim();
+    const after = splitStem.slice(caret).trim();
+    if (!before || !after) return;
+    setRows((previous) => {
+      const original = previous[index];
+      const splitOff: DraftQuestion = {
+        draftId: `draft-new-${nextDraftId++}`,
+        sourceNo: original.sourceNo,
+        type: 'single',
+        stem: after,
+        options: [],
+        answerText: '',
+        explanation: '',
+        missingAnswer: true,
+        sharedOptions: null,
+        subQuestions: null,
+      };
+      const next = [...previous];
+      next.splice(index, 1, { ...original, stem: before }, splitOff);
+      return next;
+    });
+    setSplittingIndex(null);
+  }
+
+  function mergeRow(index: number) {
+    setRows((previous) => {
+      const first = previous[index];
+      const second = previous[index + 1];
+      if (!first || !second) return previous;
+      if (first.type === 'matching' || second.type === 'matching') return previous;
+      const options: Option[] = [
+        ...first.options.map((option) => option.text),
+        ...second.options.map((option) => option.text),
+      ].map((text, position) => ({ letter: letterAt(position), text }));
+      const remap = (row: DraftQuestion) => {
+        const key = normalizeAnswer(row.answerText, row.type);
+        return [...key].flatMap((letter) => {
+          const position = row.options.findIndex((option) => option.letter === letter);
+          return position < 0 ? [] : [letterAt(position)];
+        });
+      };
+      const merged: DraftQuestion = {
+        ...first,
+        stem: `${first.stem}\n${second.stem}`,
+        options,
+        answerText: [...remap(first), ...remap(second)].join(''),
+        explanation: [first.explanation, second.explanation]
+          .filter(Boolean).join('\n'),
+      };
+      const next = [...previous];
+      next.splice(index, 2, { ...merged, missingAnswer: answerMissing(merged) });
+      return next;
+    });
   }
 
   async function startReview() {
@@ -245,54 +415,131 @@ export default function ImportView({
           <ul className="rev-list">
             {rows.map((row, index) => {
               const missing = answerMissing(row);
+              const next = rows[index + 1];
+              const canMerge = Boolean(next) && row.type !== 'matching'
+                && next.type !== 'matching';
+              const mergeTitle = !next ? '已经是最后一题'
+                : !canMerge ? '匹配题不能与别的题合并' : '';
               return (
                 <li className="rev" id={`review-row-${index + 1}`} key={row.draftId}>
                   <span className="no num">{String(index + 1).padStart(2, '0')}</span>
-                  <div className="body">
-                    <div className="stem">
-                      <span className="tiny-type">{TYPE_LABELS[row.type]}</span>
-                      {row.stem}
+                  {editingIndex === index && editingInitial ? (
+                    <div className="rev-edit">
+                      <QuestionForm
+                        mode="edit"
+                        submitLabel="完成"
+                        initialValue={editingInitial}
+                        onSubmit={(input) => {
+                          setRows((previous) => previous.map((item, i) =>
+                            i === index ? inputToDraft(input, item) : item));
+                          setEditingIndex(null);
+                        }}
+                        extraActions={(
+                          <button
+                            type="button"
+                            className="btn"
+                            onClick={() => setEditingIndex(null)}
+                          >
+                            取消
+                          </button>
+                        )}
+                      />
                     </div>
-                    <div className="optsline">
-                      {row.type === 'matching'
-                        ? matchingOptionsLine(row.sharedOptions, row.subQuestions)
-                        : row.type === 'truefalse'
-                          ? '（无选项，判断题固定「正确 / 错误」）'
-                          : row.options.map((option) =>
-                            `${option.letter}. ${option.text}`).join('　')}
+                  ) : splittingIndex === index ? (
+                    <div className="rev-edit">
+                      <label className="field">
+                        <span>把光标放在要分开的位置</span>
+                        <textarea
+                          ref={splitRef}
+                          className="field-input"
+                          value={splitStem}
+                          autoFocus
+                          onChange={(event) => setSplitStem(event.target.value)}
+                        />
+                      </label>
+                      <div className="flex gap-[10px]">
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-small"
+                          onClick={() => splitRow(index)}
+                        >
+                          从此处拆分
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-small"
+                          onClick={() => setSplittingIndex(null)}
+                        >
+                          取消
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <input
-                    className={`ans ${missing ? 'miss' : ''}`}
-                    aria-label={`第 ${index + 1} 题答案`}
-                    placeholder="缺答案"
-                    value={row.answerText}
-                    onChange={(event) => {
-                      const raw = event.target.value;
-                      if (row.type === 'matching') {
-                        const upper = raw.toUpperCase();
-                        updateRow(index, {
-                          answerText: upper,
-                          subQuestions: splitMatchingAnswer(
-                            upper, row.subQuestions ?? []),
-                        });
-                      } else {
-                        updateRow(index, {
-                          answerText: normalizeAnswer(raw, row.type),
-                        });
-                      }
-                    }}
-                  />
-                  <div className="acts">
-                    <button
-                      type="button"
-                      className="del"
-                      onClick={() => setRows((previous) =>
-                        previous.filter((_, i) => i !== index))}
-                    >
-                      删除
-                    </button>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="body">
+                        <div className="stem">
+                          <span className="tiny-type">{TYPE_LABELS[row.type]}</span>
+                          {row.stem}
+                        </div>
+                        <div className="optsline">
+                          {row.type === 'matching'
+                            ? matchingOptionsLine(row.sharedOptions, row.subQuestions)
+                            : row.type === 'truefalse'
+                              ? '（无选项，判断题固定「正确 / 错误」）'
+                              : row.options.map((option) =>
+                                `${option.letter}. ${option.text}`).join('　')}
+                        </div>
+                      </div>
+                      <input
+                        className={`ans ${missing ? 'miss' : ''}`}
+                        aria-label={`第 ${index + 1} 题答案`}
+                        placeholder="缺答案"
+                        value={row.answerText}
+                        onChange={(event) => {
+                          const raw = event.target.value;
+                          if (row.type === 'matching') {
+                            const upper = raw.toUpperCase();
+                            updateRow(index, {
+                              answerText: upper,
+                              subQuestions: splitMatchingAnswer(
+                                upper, row.subQuestions ?? []),
+                            });
+                          } else {
+                            updateRow(index, {
+                              answerText: normalizeAnswer(raw, row.type),
+                            });
+                          }
+                        }}
+                      />
+                      <div className="acts">
+                        <button type="button" onClick={() => openEditor(index)}>
+                          编辑题干
+                        </button>
+                        <button type="button" onClick={() => openEditor(index)}>
+                          改题型
+                        </button>
+                        <button type="button" onClick={() => openSplit(index)}>
+                          拆分
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!canMerge}
+                          title={mergeTitle}
+                          onClick={() => mergeRow(index)}
+                        >
+                          与下一题合并
+                        </button>
+                        <button
+                          type="button"
+                          className="del"
+                          onClick={() => setRows((previous) =>
+                            previous.filter((_, i) => i !== index))}
+                        >
+                          删除
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </li>
               );
             })}

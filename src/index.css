@@ -273,7 +273,12 @@
     @apply flex gap-[14px] mt-2 text-t12_5 text-mute;
     grid-column: 2 / 4;
   }
+  .rev .acts button:disabled { @apply text-faint cursor-default; }
   .rev .acts .del { @apply ml-auto text-red; }
+  .rev-edit {
+    @apply grid gap-[14px] min-w-0 py-[6px];
+    grid-column: 2 / 4;
+  }
   .tiny-type {
     @apply inline-flex items-center h-5 px-[5px] mr-2 rounded-3
            border border-rule text-[11.5px] text-mute;
