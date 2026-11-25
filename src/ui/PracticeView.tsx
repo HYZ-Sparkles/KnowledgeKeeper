@@ -3,6 +3,9 @@ import type { Core } from '../core';
 import type { GroupSummary, RoundItem, SubmitResult } from '../core/types';
 import { navigate } from '../router';
 import Breadcrumb from './Breadcrumb';
+import {
+  localDayString, scheduleConsequence, scheduleLabel,
+} from './scheduleCopy';
 
 const TYPE_LABELS: Record<string, string> = {
   single: '单选题',
@@ -17,12 +20,13 @@ function formatLetters(letters: readonly string[]): string {
 
 /** One practice round; the core owns ordering, grading and scheduling. */
 export default function PracticeView({
-  core, groupId, groups, refreshGroups,
+  core, groupId, groups, refreshGroups, onItemChange,
 }: {
   core: Core;
   groupId: string;
   groups: GroupSummary[];
   refreshGroups: () => Promise<void>;
+  onItemChange: (item: RoundItem | null) => void;
 }) {
   const [items, setItems] = useState<RoundItem[] | null>(null);
   const [index, setIndex] = useState(0);
@@ -99,6 +103,9 @@ export default function PracticeView({
   }
 
   const item = items?.[index];
+
+  useEffect(() => { onItemChange(item ?? null); }, [item, onItemChange]);
+
   const hint = picked.length > 0
     ? `已选 ${formatLetters(picked)}`
     : item?.type === 'multiple' ? '可多选，全对才算对' : '选一个再提交';
@@ -141,7 +148,12 @@ export default function PracticeView({
           </div>
           <div className="qlabel">
             <span className="qtype">{TYPE_LABELS[item.type] ?? item.type}</span>
-            <span className="num">{item.correctCount} 对 {item.wrongCount} 错</span>
+            <span className="num">
+              {scheduleLabel(
+                item.schedule, item.correctCount, item.wrongCount,
+                localDayString(new Date()),
+              )}
+            </span>
           </div>
           <h2 className="qstem">{item.stem}</h2>
           <ul className="opts">
@@ -179,6 +191,10 @@ export default function PracticeView({
                 ) : (
                   <>你选的是 <b>{formatLetters(picked)}</b>，正确答案{' '}
                     <b>{formatLetters(result.correctAnswer)}</b></>
+                )}
+                <div className="mt-[4px]">{scheduleConsequence(result)}</div>
+                {!result.correct && item.type === 'multiple' && (
+                  <div>漏选也算错。</div>
                 )}
               </div>
               {item.explanation && (

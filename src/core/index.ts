@@ -5,6 +5,9 @@ import type {
 } from './types';
 import { grade } from './internal/grade';
 import { buildRound } from './internal/round';
+import { advance, localDay } from './internal/schedule';
+
+export { INTERVALS } from './internal/schedule';
 
 export interface CoreDeps {
   storage: StorageAdapter;
@@ -204,7 +207,8 @@ export function createCore(deps: CoreDeps): Core {
       ]);
       if (!groups.some((g) => g.id === groupId)) throw new Error('分组不存在');
       return buildRound(
-        questions.filter((q) => q.groupId === groupId), random,
+        questions.filter((q) => q.groupId === groupId),
+        schedules, random, clock.now(),
       ).map((question) => toQuestionView(question, schedules, attempts));
     },
     async submitAnswer(
@@ -215,8 +219,9 @@ export function createCore(deps: CoreDeps): Core {
         .find((q) => q.id === questionId);
       if (!question) throw new Error('题目不存在');
       const correct = grade(question, answer);
-      const schedule = (await storage.getSchedules())[questionId]
+      const before = (await storage.getSchedules())[questionId]
         ?? { stage: 0, dueDate: null };
+      const after = advance(before, correct, clock.now());
       await storage.putAttempt({
         id: generateId(random, 'a'),
         questionId,
@@ -224,12 +229,13 @@ export function createCore(deps: CoreDeps): Core {
         correct,
         at: clock.now().toISOString(),
       });
+      if (after !== before) await storage.putSchedule(questionId, after);
       return {
         questionId,
         correct,
         correctAnswer: [...question.answer],
-        before: schedule,
-        after: schedule,
+        before,
+        after,
       };
     },
   };
@@ -268,10 +274,3 @@ function toQuestionView(
   };
 }
 
-/** Local calendar day as YYYY-MM-DD, per spec「排期与轮」. */
-function localDay(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}

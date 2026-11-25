@@ -1,18 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Core } from './core';
-import type { GroupSummary, LibraryMeta } from './core/types';
+import type { GroupSummary, LibraryMeta, RoundItem } from './core/types';
 import { currentRoute, navigate, type Route } from './router';
 import Breadcrumb from './ui/Breadcrumb';
 import EntryView from './ui/EntryView';
 import GroupView from './ui/GroupView';
 import PracticeView from './ui/PracticeView';
 import QuestionPage from './ui/QuestionPage';
+import { rulerCells, rulerNote } from './ui/scheduleCopy';
 import Toast from './ui/Toast';
 
 export default function App({ core }: { core: Core }) {
   const [route, setRoute] = useState<Route>(currentRoute);
   const [groups, setGroups] = useState<GroupSummary[] | null>(null);
   const [meta, setMeta] = useState<LibraryMeta | null>(null);
+  const [practiceItem, setPracticeItem] = useState<RoundItem | null>(null);
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
 
   const showToast = useCallback((text: string) => {
@@ -77,6 +79,7 @@ export default function App({ core }: { core: Core }) {
               groupId={effectiveRoute.groupId}
               groups={groups ?? []}
               refreshGroups={refresh}
+              onItemChange={setPracticeItem}
             />
           ) : (
             <GroupView
@@ -88,7 +91,7 @@ export default function App({ core }: { core: Core }) {
             />
           )}
         </main>
-        <RightRail route={effectiveRoute} />
+        <RightRail route={effectiveRoute} practiceItem={practiceItem} />
       </div>
       <Toast key={toast?.id ?? 0} message={toast?.text ?? null} onClose={closeToast} />
     </>
@@ -153,8 +156,29 @@ function LeftRail({ groups, route }: { groups: GroupSummary[]; route: Route }) {
   );
 }
 
-function RightRail({ route }: { route: Route }) {
-  if (route.name === 'practice') return <aside className="rail-right" />;
+function RightRail({
+  route, practiceItem,
+}: { route: Route; practiceItem: RoundItem | null }) {
+  if (route.name === 'practice') {
+    const schedule = practiceItem?.schedule ?? { stage: 0, dueDate: null };
+    return (
+      <aside className="rail-right">
+        <div className="mb-[26px]">
+          <h2 className="text-[14.5px] font-semibold text-ink-2 mb-[10px]">
+            这道题
+          </h2>
+          <div className="rr-scale">
+            {rulerCells(schedule).map((on, index) => (
+              <i key={index} className={on ? 'on' : ''} />
+            ))}
+          </div>
+          <p className="text-t12_5 leading-[1.7] text-mute m-0 mt-[6px]">
+            {rulerNote(schedule)}
+          </p>
+        </div>
+      </aside>
+    );
+  }
   return (
     <aside className="rail-right">
       {route.name === 'entry' ? (

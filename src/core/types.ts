@@ -14,10 +14,12 @@ export interface SubQuestion {
 }
 
 export interface Schedule {
-  /** Interval stage 0=unscheduled, 1..6=scheduled, -1=review complete. */
+  /** Interval stage: 0=unscheduled, 1..6=reviewing. */
   stage: number;
   /** Local calendar day (YYYY-MM-DD) when the question is due. */
   dueDate: string | null;
+  /** Explicit terminal state after the sixth interval; never stage 7. */
+  completed?: boolean;
 }
 
 export interface Question {

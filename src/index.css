@@ -110,6 +110,11 @@
   }
   .fb-exp b { @apply font-semibold text-ink-2; }
   .fb-next { @apply mt-[14px]; }
+  .rr-scale { @apply flex gap-[3px] mt-[10px] mb-[8px]; }
+  .rr-scale i {
+    content: ''; @apply flex-1 h-1 rounded-[1px] bg-[#E6E0D7];
+  }
+  .rr-scale i.on { @apply bg-orange; }
   .form-grid { @apply grid gap-[14px] max-w-[700px] mt-1; }
   .two { @apply grid grid-cols-2 gap-4; }
   .field { @apply grid gap-[6px] text-[13px] text-mute; }

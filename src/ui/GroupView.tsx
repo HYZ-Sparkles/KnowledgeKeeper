@@ -5,6 +5,7 @@ import { navigate } from '../router';
 import Breadcrumb from './Breadcrumb';
 import Dialog from './Dialog';
 import { writeEntryGroupId } from './deviceState';
+import { localDayString, scheduleText } from './scheduleCopy';
 
 const TYPE_LABELS: Record<string, string> = {
   single: '单选题',
@@ -117,7 +118,7 @@ export default function GroupView({
                 <span className="qtype">{TYPE_LABELS[question.type] ?? question.type}</span>
                 <span className="row-title flex-1 min-w-0">{question.stem}</span>
                 <span className="meta flex-none text-t13_5 text-faint num w-[152px] text-right">
-                  未排期
+                  {scheduleText(question.schedule, localDayString(new Date()))}
                 </span>
                 <span className="meta flex-none text-t13_5 text-mute num w-[74px] text-right">
                   {question.correctCount} 对 {question.wrongCount} 错

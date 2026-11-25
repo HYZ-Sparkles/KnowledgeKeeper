@@ -7,6 +7,7 @@ import { navigate } from '../router';
 import Breadcrumb from './Breadcrumb';
 import Dialog from './Dialog';
 import QuestionForm from './QuestionForm';
+import { localDayString, scheduleLabel } from './scheduleCopy';
 
 const TYPE_LABELS: Record<string, string> = {
   single: '单选题',
@@ -90,13 +91,15 @@ export default function QuestionPage({
     <>
       <Breadcrumb trail={['我的题库', groupName, '题目']} />
       <h1 className="text-t40 font-bold text-ink-2 mb-3 tracking-[-.3px]">编辑题目</h1>
-      {/* 排期文案由 09、对错次数由 07 接入，之前只显示占位值。 */}
       <p className="flex flex-wrap items-center gap-[10px] text-t13_5 text-mute m-0">
         <span>{TYPE_LABELS[question.type] ?? question.type}</span>
         <span>·</span>
-        <span>未排期</span>
-        <span>·</span>
-        <span>0 对 0 错</span>
+        <span>
+          {scheduleLabel(
+            question.schedule, question.correctCount, question.wrongCount,
+            localDayString(new Date()),
+          )}
+        </span>
         <span>·</span>
         <span>{question.favorite ? '已收藏' : '未收藏'}</span>
       </p>
