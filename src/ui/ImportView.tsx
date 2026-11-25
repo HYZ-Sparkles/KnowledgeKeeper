@@ -444,7 +444,7 @@ export default function ImportView({
             </span>
             <button
               type="button"
-              className="btn btn-primary btn-small"
+              className="btn btn-primary btn-small btn-tap"
               disabled={missingNumbers.length > 0 || rows.length === 0}
               onClick={() => void commit()}
             >

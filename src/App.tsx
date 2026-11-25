@@ -377,7 +377,7 @@ function HomeView({ groups, meta }: { groups: GroupSummary[]; meta: LibraryMeta 
                       正确率 {rate}%<i><b style={{ width: `${rate}%` }} /></i>
                     </span>
                   )}
-                  <span className={dueCount > 0 ? 'text-orange' : 'text-green'}>
+                  <span className={dueCount > 0 ? 'text-orange' : 'text-faint'}>
                     {dueCount > 0 ? `到期 ${dueCount}` : '无到期'}
                   </span>
                 </span>

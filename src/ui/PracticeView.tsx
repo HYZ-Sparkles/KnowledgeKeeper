@@ -348,7 +348,7 @@ export default function PracticeView({
                 <div className="fb-exp"><b>解析</b>　{item.explanation}</div>
               )}
               <div className="fb-next">
-                <button className="btn btn-small" type="button"
+                <button className="btn btn-small btn-tap" type="button"
                   onClick={next}>下一题</button>
               </div>
             </div>

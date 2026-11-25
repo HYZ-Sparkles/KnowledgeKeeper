@@ -90,6 +90,8 @@
   .btn-ghost { @apply border-transparent text-amber px-[6px]; }
   .btn-danger { @apply text-red; }
   .btn-small { @apply h-[34px] px-[13px] text-t13_5; }
+  /* 主动作沿用紧凑形状，但触摸目标保持 42px。 */
+  .btn-tap { @apply h-tap; }
   .grow { @apply flex-1; }
 
   /* 收藏按钮与分组页开关：文字加图标，触摸目标 40px。 */
