@@ -1,0 +1,89 @@
+/** Domain types for the application core. See GLOSSARY.md for vocabulary. */
+
+export type QuestionType = 'single' | 'multiple' | 'truefalse' | 'matching';
+
+export interface Option {
+  letter: string;
+  text: string;
+}
+
+export interface SubQuestion {
+  stem: string;
+  type: 'single' | 'multiple';
+  answer: string[];
+}
+
+export interface Schedule {
+  /** Interval stage 0=unscheduled, 1..6=scheduled, -1=review complete. */
+  stage: number;
+  /** Local calendar day (YYYY-MM-DD) when the question is due. */
+  dueDate: string | null;
+}
+
+export interface Question {
+  id: string;
+  groupId: string;
+  type: QuestionType;
+  stem: string;
+  options: Option[];
+  answer: string[];
+  explanation: string;
+  favorite: boolean;
+  importOrder: number;
+  sharedOptions: Option[] | null;
+  subQuestions: SubQuestion[] | null;
+}
+
+export interface Group {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface Attempt {
+  id: string;
+  questionId: string;
+  /** Sub-question index; null for non-matching questions. */
+  subIndex: number | null;
+  correct: boolean;
+  at: string;
+}
+
+export interface LibraryMeta {
+  lastBackupAt: string | null;
+}
+
+export interface GroupSummary {
+  group: Group;
+  questionCount: number;
+  dueCount: number;
+  inReviewCount: number;
+  correctRate: number | null;
+}
+
+/** The single storage interface. Both IndexedDB and in-memory implement it. */
+export interface StorageAdapter {
+  getGroups(): Promise<Group[]>;
+  getQuestions(): Promise<Question[]>;
+  getSchedules(): Promise<Record<string, Schedule>>;
+  getAttempts(): Promise<Attempt[]>;
+  getMeta(): Promise<LibraryMeta>;
+  putGroup(group: Group): Promise<void>;
+  putQuestion(question: Question): Promise<void>;
+  putSchedule(questionId: string, schedule: Schedule): Promise<void>;
+  putAttempt(attempt: Attempt): Promise<void>;
+  putMeta(meta: LibraryMeta): Promise<void>;
+  deleteGroup(groupId: string): Promise<void>;
+  deleteQuestion(questionId: string): Promise<void>;
+  deleteSchedule(questionId: string): Promise<void>;
+  clear(): Promise<void>;
+}
+
+export interface Clock {
+  now(): Date;
+}
+
+export interface Random {
+  /** Returns a float in [0, 1). */
+  next(): number;
+}

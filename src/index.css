@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root { min-height: 100%; }
+  body { @apply bg-paper text-ink font-sans text-t15; }
+  .num { font-variant-numeric: tabular-nums; }
+}
+
+@layer components {
+  .topbar {
+    @apply sticky top-0 z-20 h-topbar flex items-center gap-1 px-[22px]
+           border-b border-rule bg-paper;
+  }
+  .brand {
+    @apply flex items-center gap-[9px] mr-[30px] text-blue font-bold
+           text-[17px] tracking-[-.1px] whitespace-nowrap;
+  }
+  .nav-btn {
+    @apply h-topbar px-[15px] flex items-center gap-[7px] text-t15 text-ink
+           border-b-[3px] border-transparent;
+  }
+  .nav-btn.active {
+    @apply text-blue border-blue font-medium;
+  }
+  .shell {
+    @apply grid min-h-[calc(100vh-56px)]
+           grid-cols-[240px_minmax(0,1fr)_220px] items-start;
+  }
+  .rail-left {
+    @apply border-r border-rule min-h-[calc(100vh-56px)] py-4;
+  }
+  .rail-right {
+    @apply border-l border-rule min-h-[calc(100vh-56px)] px-5 py-[30px];
+  }
+  .content {
+    @apply px-12 pt-[34px] pb-24 max-w-[1010px];
+  }
+  .row-title { @apply text-t16 text-amber; }
+  .hairline { @apply border-0 border-t border-rule my-[22px]; }
+  .pills { @apply flex flex-wrap gap-2 mb-1; }
+  .pill {
+    @apply inline-flex items-center gap-[6px] h-[26px] px-[11px]
+           rounded-[13px] text-t12_5;
+  }
+}
+
+/* Breakpoints per spec「壳」: ≤1180 narrow, ≤960 no right rail, ≤760 single column. */
+@media (max-width: 1180px) {
+  .shell { grid-template-columns: 198px minmax(0, 1fr) 176px; }
+  .content { padding-left: 32px; padding-right: 32px; }
+}
+@media (max-width: 960px) {
+  .shell { grid-template-columns: 198px minmax(0, 1fr); }
+  .rail-right { display: none; }
+}
+@media (max-width: 760px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .rail-left { display: none; }
+  .topbar-right { display: none; }
+  .brand span { display: none; }
+}
