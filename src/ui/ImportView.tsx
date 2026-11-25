@@ -288,6 +288,19 @@ export default function ImportView({
     });
   }
 
+  function downloadTemplate() {
+    const blob = core.excelTemplate();
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'KnowledgeKeeper-导入模板.xlsx';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    showToast('已下载 Excel 模板');
+  }
+
   /** File text lands in the same editable box; spreadsheets go straight in. */
   async function handleFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -365,7 +378,7 @@ export default function ImportView({
               ref={fileInputRef}
               className="hidden"
               type="file"
-              accept=".pdf,.docx"
+              accept=".pdf,.docx,.xlsx,.xls"
               aria-label="从「文件」选择"
               onChange={(event) => void handleFile(event)}
             />
@@ -378,6 +391,13 @@ export default function ImportView({
               {extracting ? '正在提取…' : '从「文件」选择'}
             </button>
             <span className="hintline">或直接粘贴文本</span>
+            <button
+              className="btn btn-ghost btn-small"
+              type="button"
+              onClick={downloadTemplate}
+            >
+              下载 Excel 模板
+            </button>
           </div>
           {extractedFrom && (
             <p className="extracted-note">

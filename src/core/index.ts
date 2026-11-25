@@ -8,6 +8,8 @@ import {
   draftAnswer, matchingDraftAnswer, parseText, trueFalseOptions,
 } from './internal/parseText';
 import { extractFile } from './internal/extractFile';
+import { parseExcel } from './internal/parseExcel';
+import { excelTemplate } from './internal/excelTemplate';
 import { grade, gradeMatching } from './internal/grade';
 import { buildRound } from './internal/round';
 import { advance, localDay } from './internal/schedule';
@@ -36,6 +38,8 @@ export interface Core {
    * a draft, so the UI never advances to review with a bad import.
    */
   importFromFile(file: FileLike): Promise<FileImportResult>;
+  /** Runtime-generated .xlsx template for the fixed import columns. */
+  excelTemplate(): Blob;
   /** Validate the whole draft, then write it in import order. */
   commitReview(draft: ReviewDraft, groupId: string): Promise<QuestionView[]>;
   listGroups(): Promise<GroupSummary[]>;
@@ -90,13 +94,24 @@ export function createCore(deps: CoreDeps): Core {
       return draftFromText(text);
     },
     async importFromFile(file: FileLike): Promise<FileImportResult> {
-      const { text } = await extractFile(file);
+      const { text, spreadsheet } = await extractFile(file);
+      if (spreadsheet) {
+        return {
+          fileName: file.name,
+          text: '',
+          draft: parseExcel(await file.arrayBuffer()),
+          skipTextarea: true,
+        };
+      }
       return {
         fileName: file.name,
         text,
         draft: draftFromText(text),
         skipTextarea: false,
       };
+    },
+    excelTemplate(): Blob {
+      return excelTemplate();
     },
     async commitReview(
       draft: ReviewDraft, groupId: string,

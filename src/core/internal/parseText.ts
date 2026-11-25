@@ -93,7 +93,7 @@ function looksLikeTrueFalseOptions(options: Option[]): boolean {
     ['正确', '错误', '√', '×', '对', '错'].includes(option.text.trim()));
 }
 
-function answerKeyFor(
+export function answerKeyFor(
   type: QuestionType, raw: string, options: Option[],
 ): string {
   const answer = raw.replace(/[\s　]+/g, '').toUpperCase();
@@ -108,7 +108,7 @@ function answerKeyFor(
   return answer;
 }
 
-function inferType(raw: string, options: Option[]): QuestionType {
+export function inferType(raw: string, options: Option[]): QuestionType {
   const answer = raw.replace(/[\s　]+/g, '').toUpperCase();
   const symbol = TRUE_FALSE[answer];
   const tfOptions = looksLikeTrueFalseOptions(options);
@@ -117,7 +117,7 @@ function inferType(raw: string, options: Option[]): QuestionType {
   return 'single';
 }
 
-function missingAnswer(question: DraftQuestion): boolean {
+export function missingAnswer(question: DraftQuestion): boolean {
   const answer = answerKeyFor(
     question.type, question.answerText, question.options,
   );
@@ -385,6 +385,11 @@ export function parseText(text: string): ReviewDraft {
     question.missingAnswer = missingAnswer(question);
   });
 
+  return { questions, warnings: buildWarnings(questions) };
+}
+
+/** Shared by text and Excel imports: identical missing-answer copy. */
+export function buildWarnings(questions: DraftQuestion[]): ReviewWarning[] {
   const warnings: ReviewWarning[] = [];
   const missingNumbers = questions.flatMap((question, index) =>
     question.missingAnswer ? [index + 1] : []);
@@ -398,7 +403,7 @@ export function parseText(text: string): ReviewDraft {
         + `第 ${joinNumbers(missingNumbers)} 题缺答案，标红了。`,
     });
   }
-  return { questions, warnings };
+  return warnings;
 }
 
 /** Validate a matching draft; its answers live in subQuestions, not answerText. */

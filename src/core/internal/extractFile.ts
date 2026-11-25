@@ -5,6 +5,8 @@ import type { FileLike } from '../types';
 /** Private binary text extraction adapter; nothing outside the core calls it. */
 export interface FileExtraction {
   text: string;
+  /** Spreadsheets are parsed as rows, not pushed through the textarea. */
+  spreadsheet: boolean;
 }
 
 function reason(cause: unknown): string {
@@ -58,14 +60,19 @@ export async function extractFile(file: FileLike): Promise<FileExtraction> {
   if (name.endsWith('.doc')) {
     throw new Error('请在 Word 里另存为 .docx。旧版 .doc 无法直接提取文字。');
   }
+  if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+    return { text: '', spreadsheet: true };
+  }
   let text = '';
   if (name.endsWith('.pdf')) text = await extractPdf(file);
   else if (name.endsWith('.docx')) text = await extractDocx(file);
-  else throw new Error(`不支持的文件格式「${file.name}」，请选择 .pdf 或 .docx。`);
+  else {
+    throw new Error(`不支持的文件格式「${file.name}」，请选择 .pdf、.docx、.xlsx 或 .xls。`);
+  }
 
   if (!text.trim()) {
     throw new Error('提取出的文字为 0 字，这可能是扫描件或图片。'
       + '请改用「或直接粘贴文本」。');
   }
-  return { text };
+  return { text, spreadsheet: false };
 }
