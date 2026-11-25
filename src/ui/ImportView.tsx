@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ChangeEvent } from 'react';
 import type { Core } from '../core';
 import type {
   DraftQuestion, GroupSummary, Option, QuestionInput, QuestionType,
@@ -180,6 +181,11 @@ export default function ImportView({
   const [splittingIndex, setSplittingIndex] = useState<number | null>(null);
   const [splitStem, setSplitStem] = useState('');
   const splitRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [extractedFrom, setExtractedFrom] = useState<{
+    name: string; length: number;
+  } | null>(null);
 
   // Keep the form's prefill stable while its own fields are being edited.
   const editingInitial = useMemo(
@@ -282,6 +288,31 @@ export default function ImportView({
     });
   }
 
+  /** File text lands in the same editable box; spreadsheets go straight in. */
+  async function handleFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = ''; // allow picking the same file again
+    if (!file) return;
+    setExtracting(true);
+    setError('');
+    setExtractedFrom(null);
+    try {
+      const result = await core.importFromFile(file);
+      if (result.skipTextarea) {
+        setRows(result.draft.questions.map((question) => ({ ...question })));
+        setStep(2);
+        window.scrollTo({ top: 0 });
+      } else {
+        setText(result.text);
+        setExtractedFrom({ name: result.fileName, length: result.text.length });
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setExtracting(false);
+    }
+  }
+
   async function startReview() {
     setBusy(true);
     setError('');
@@ -329,6 +360,31 @@ export default function ImportView({
 
       {step === 1 ? (
         <>
+          <div className="toolbar">
+            <input
+              ref={fileInputRef}
+              className="hidden"
+              type="file"
+              accept=".pdf,.docx"
+              aria-label="从「文件」选择"
+              onChange={(event) => void handleFile(event)}
+            />
+            <button
+              className="btn"
+              type="button"
+              disabled={extracting}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {extracting ? '正在提取…' : '从「文件」选择'}
+            </button>
+            <span className="hintline">或直接粘贴文本</span>
+          </div>
+          {extractedFrom && (
+            <p className="extracted-note">
+              已从「{extractedFrom.name}」提取约{' '}
+              <b className="num">{extractedFrom.length}</b> 字
+            </p>
+          )}
           <label className="field max-w-none">
             <span>粘贴题目文本</span>
             <textarea
@@ -339,6 +395,7 @@ export default function ImportView({
               onChange={(event) => {
                 setText(event.target.value);
                 setError('');
+                setExtractedFrom(null);
               }}
             />
           </label>
@@ -370,7 +427,7 @@ export default function ImportView({
           <button
             className="btn btn-primary"
             type="button"
-            disabled={busy || !groupId}
+            disabled={busy || extracting || !groupId}
             onClick={() => void startReview()}
           >
             开始校对

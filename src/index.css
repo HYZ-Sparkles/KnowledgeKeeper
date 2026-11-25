@@ -225,6 +225,8 @@
   .form-invalid { @apply text-[13px] text-red m-0; }
 
   /* 导入页：白底等宽粘贴框、常驻警示条与校对行。 */
+  .extracted-note { @apply text-[13px] text-mute mt-2 mb-[10px]; }
+  .extracted-note b { @apply font-semibold text-ink-2; }
   .paste {
     @apply block w-full h-[210px] px-4 py-[14px] mb-[14px] border
            border-rule rounded-3 bg-white text-[13.5px] leading-[1.85]

@@ -2,11 +2,12 @@ import type {
   Clock, Random, StorageAdapter, Group, GroupSummary, GroupTypeCounts,
   LibraryMeta, Question, QuestionInput, QuestionView, Schedule, Attempt,
   RoundItem, SubmittedAnswer, SubmitResult, SubQuestionResult,
-  ListQuestionsOptions, ReviewDraft,
+  ListQuestionsOptions, ReviewDraft, FileLike, FileImportResult,
 } from './types';
 import {
   draftAnswer, matchingDraftAnswer, parseText, trueFalseOptions,
 } from './internal/parseText';
+import { extractFile } from './internal/extractFile';
 import { grade, gradeMatching } from './internal/grade';
 import { buildRound } from './internal/round';
 import { advance, localDay } from './internal/schedule';
@@ -29,6 +30,12 @@ function generateId(random: Random, prefix: string): string {
 export interface Core {
   /** Parse pasted text into a review draft; zero questions throws. */
   importFromText(text: string): Promise<ReviewDraft>;
+  /**
+   * Extract a file's text privately, then parse it with the text parser.
+   * Unsupported formats and extraction problems throw instead of yielding
+   * a draft, so the UI never advances to review with a bad import.
+   */
+  importFromFile(file: FileLike): Promise<FileImportResult>;
   /** Validate the whole draft, then write it in import order. */
   commitReview(draft: ReviewDraft, groupId: string): Promise<QuestionView[]>;
   listGroups(): Promise<GroupSummary[]>;
@@ -80,11 +87,16 @@ export function createCore(deps: CoreDeps): Core {
 
   return {
     async importFromText(text: string): Promise<ReviewDraft> {
-      const draft = parseText(text);
-      if (draft.questions.length === 0) {
-        throw new Error('没有识别到题目，请粘贴带题号的文本，或到「录入」页手动添加。');
-      }
-      return draft;
+      return draftFromText(text);
+    },
+    async importFromFile(file: FileLike): Promise<FileImportResult> {
+      const { text } = await extractFile(file);
+      return {
+        fileName: file.name,
+        text,
+        draft: draftFromText(text),
+        skipTextarea: false,
+      };
     },
     async commitReview(
       draft: ReviewDraft, groupId: string,
@@ -375,6 +387,15 @@ export function createCore(deps: CoreDeps): Core {
       return { questionId, correct, correctAnswer, before, after, subResults };
     },
   };
+}
+
+/** One text parser for pasted text and for text extracted from files. */
+function draftFromText(text: string): ReviewDraft {
+  const draft = parseText(text);
+  if (draft.questions.length === 0) {
+    throw new Error('没有识别到题目，请粘贴带题号的文本，或到「录入」页手动添加。');
+  }
+  return draft;
 }
 
 /** Copy the UI-owned fields; id/group/favorite/importOrder are not editable. */

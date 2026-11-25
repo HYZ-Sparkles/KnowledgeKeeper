@@ -86,6 +86,24 @@ export interface ReviewDraft {
   warnings: ReviewWarning[];
 }
 
+/** A browser File, or an equivalent in-memory value handed to the core. */
+export interface FileLike {
+  name: string;
+  type?: string;
+  arrayBuffer(): Promise<ArrayBuffer>;
+}
+
+/** What a file import hands back to the UI, always through the core seam. */
+export interface FileImportResult {
+  fileName: string;
+  /** Extracted plain text; PDF/Word puts this into the editable textarea. */
+  text: string;
+  /** Parsed by the same parser as importFromText, so warnings stay identical. */
+  draft: ReviewDraft;
+  /** Spreadsheets skip the textarea and go straight to review. */
+  skipTextarea: boolean;
+}
+
 /** A question with its derived state; counts are computed from attempts. */
 export interface QuestionView extends Question {
   schedule: Schedule;
