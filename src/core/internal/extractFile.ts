@@ -1,6 +1,16 @@
 import mammoth from 'mammoth/mammoth.browser.js';
-import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import {
+  GlobalWorkerOptions, getDocument,
+} from 'pdfjs-dist/legacy/build/pdf.mjs';
+import pdfWorkerUrl from 'pdfjs-dist/legacy/build/pdf.worker.mjs?url';
 import type { FileLike } from '../types';
+
+/** A browser has no fake worker; Node/Vitest disable it and never read this. */
+function usePdfWorker(): void {
+  if (typeof window !== 'undefined') {
+    GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+  }
+}
 
 /** Private binary text extraction adapter; nothing outside the core calls it. */
 export interface FileExtraction {
@@ -13,8 +23,9 @@ function reason(cause: unknown): string {
   return cause instanceof Error ? cause.message : String(cause);
 }
 
-/** pdf.js' legacy build runs in Node/Vitest without a browser-only worker. */
+/** pdf.js' worker runs off the main thread in the browser, in-process in Node. */
 async function extractPdf(file: FileLike): Promise<string> {
+  usePdfWorker();
   let task: ReturnType<typeof getDocument> | undefined;
   try {
     const data = new Uint8Array(await file.arrayBuffer());
