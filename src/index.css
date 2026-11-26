@@ -277,6 +277,7 @@
   .rev .no { @apply pt-[3px] text-[13px] text-faint; }
   .rev .body { @apply min-w-0; }
   .rev .stem { @apply mb-[6px] text-t15 leading-[1.6] text-ink; }
+  .rev .stem .stem-miss { @apply text-red; }
   .rev .optsline { @apply text-[13px] leading-[1.7] text-mute; }
   .rev .ans {
     @apply w-full h-[34px] px-[10px] rounded-3 border border-rule

@@ -20,6 +20,39 @@ const TRUE_FALSE_OPTIONS: Option[] = [
   { letter: '×', text: '错误' },
 ];
 
+/** The persistent error strip: one shape for every failed step. */
+function WarningBar({ message }: { message: string }) {
+  if (!message) return null;
+  return (
+    <div className="warn" role="alert">
+      <span>{message}</span>
+    </div>
+  );
+}
+
+/** The clickable question numbers inside the sticky review bar. */
+function JumpNumbers({
+  numbers, onJump,
+}: { numbers: number[]; onJump: (number: number) => void }) {
+  return (
+    <>
+      {numbers.map((number, index) => (
+        <span key={number}>
+          {index > 0 && '、'}
+          <button
+            type="button"
+            className="jump"
+            aria-label={`跳到第 ${number} 题`}
+            onClick={() => onJump(number)}
+          >
+            {number}
+          </button>
+        </span>
+      ))}
+    </>
+  );
+}
+
 let nextDraftId = 1;
 
 function answerMissing(question: DraftQuestion): boolean {
@@ -38,6 +71,22 @@ function answerMissing(question: DraftQuestion): boolean {
   if (question.type === 'truefalse') return answer !== '√' && answer !== '×';
   const letters = new Set(question.options.map((option) => option.letter));
   return [...answer].some((letter) => !letters.has(letter));
+}
+
+/** What still blocks writing this row; `commitReview` rejects all three cases. */
+type RowProblem = 'stem' | 'subStem' | 'answer';
+
+function rowProblem(question: DraftQuestion): RowProblem | null {
+  if (!question.stem.trim()) return 'stem';
+  if (question.type === 'matching'
+    && (question.subQuestions ?? []).some((sub) => !sub.stem.trim())) {
+    return 'subStem';
+  }
+  return answerMissing(question) ? 'answer' : null;
+}
+
+function errorText(cause: unknown): string {
+  return cause instanceof Error ? cause.message : String(cause);
 }
 
 /** Keep the editable answer box and the per-sub-question answers in sync. */
@@ -174,9 +223,21 @@ export default function ImportView({
       valid(current) ?? valid(readImportGroupId()) ?? defaultGroupId(groups));
   }, [groups]);
 
-  const missingNumbers = rows.flatMap((row, index) =>
-    answerMissing(row) ? [index + 1] : []);
-  const answered = rows.length - missingNumbers.length;
+  const answerMissingNumbers = rows.flatMap((row, index) =>
+    rowProblem(row) === 'answer' ? [index + 1] : []);
+  const stemMissingNumbers = rows.flatMap((row, index) =>
+    rowProblem(row) === 'stem' ? [index + 1] : []);
+  const subStemMissingNumbers = rows.flatMap((row, index) =>
+    rowProblem(row) === 'subStem' ? [index + 1] : []);
+  const answered = rows.length - answerMissingNumbers.length;
+  // An open row holds state the draft does not have yet; writing now would
+  // silently drop that edit, so the button waits until the row is closed.
+  const editingNumber = editingIndex === null ? null : editingIndex + 1;
+  const splittingNumber = splittingIndex === null ? null : splittingIndex + 1;
+  const blockedNumbers = stemMissingNumbers.length + subStemMissingNumbers.length
+    + answerMissingNumbers.length;
+  const canWrite = rows.length > 0 && editingNumber === null
+    && splittingNumber === null && blockedNumbers === 0;
 
   function changeGroup(id: string) {
     setGroupId(id);
@@ -275,7 +336,7 @@ export default function ImportView({
         setExtractedFrom({ name: result.fileName, length: result.text.length });
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(errorText(cause));
     } finally {
       setExtracting(false);
     }
@@ -290,7 +351,7 @@ export default function ImportView({
       setStep(2);
       window.scrollTo({ top: 0 });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(errorText(cause));
     } finally {
       setBusy(false);
     }
@@ -304,13 +365,22 @@ export default function ImportView({
   }
 
   async function commit() {
-    if (missingNumbers.length > 0 || rows.length === 0 || !groupId) return;
-    const draft: ReviewDraft = { questions: rows, warnings: [] };
-    await core.commitReview(draft, groupId);
-    const name = groups.find((g) => g.group.id === groupId)?.group.name ?? '';
-    showToast(`已写入 ${rows.length} 道题到「${name}」`);
-    await refreshGroups();
-    navigate({ name: 'group', groupId });
+    if (!canWrite || !groupId) return;
+    setBusy(true);
+    setError('');
+    try {
+      const draft: ReviewDraft = { questions: rows, warnings: [] };
+      await core.commitReview(draft, groupId);
+      const name = groups.find((g) => g.group.id === groupId)?.group.name ?? '';
+      showToast(`已写入 ${rows.length} 道题到「${name}」`);
+      await refreshGroups();
+      navigate({ name: 'group', groupId });
+    } catch (cause) {
+      // The core is the last line of defence; its refusal must be visible.
+      setError(errorText(cause));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -374,11 +444,7 @@ export default function ImportView({
               }}
             />
           </label>
-          {error && (
-            <div className="warn" role="alert">
-              <span>{error}</span>
-            </div>
-          )}
+          <WarningBar message={error} />
           <label className="field">
             <span>放进哪个分组</span>
             <select
@@ -410,40 +476,45 @@ export default function ImportView({
         </>
       ) : (
         <>
-          <div className={`review-bar ${missingNumbers.length === 0 ? 'ok' : ''}`}
+          <div className={`review-bar ${canWrite ? 'ok' : ''}`}
             role="status">
             <span>
               识别到 <b className="num">{rows.length}</b> 道题，答案{' '}
               <b className="num">{answered}</b> 个。{' '}
-              {missingNumbers.length > 0 ? (
+              {stemMissingNumbers.length > 0 && (
                 <>
-                  第{' '}
-                  {missingNumbers.map((number, index) => (
-                    <span key={number}>
-                      {index > 0 && '、'}
-                      <button
-                        type="button"
-                        className="jump"
-                        aria-label={`跳到第 ${number} 题`}
-                        onClick={() => jumpToRow(number)}
-                      >
-                        {number}
-                      </button>
-                    </span>
-                  ))}
-                  {' '}题缺答案，标红了。
+                  第 <JumpNumbers numbers={stemMissingNumbers} onJump={jumpToRow} />
+                  {' '}题题干不能为空，标红了。{' '}
                 </>
-              ) : '都齐了。'}
+              )}
+              {subStemMissingNumbers.length > 0 && (
+                <>
+                  第 <JumpNumbers numbers={subStemMissingNumbers} onJump={jumpToRow} />
+                  {' '}题有子题缺题干，标红了。{' '}
+                </>
+              )}
+              {answerMissingNumbers.length > 0 && (
+                <>
+                  第 <JumpNumbers numbers={answerMissingNumbers} onJump={jumpToRow} />
+                  {' '}题缺答案，标红了。{' '}
+                </>
+              )}
+              {editingNumber !== null ? (
+                <>第 {editingNumber} 题还在编辑中，点「完成」后才能写入。</>
+              ) : splittingNumber !== null ? (
+                <>第 {splittingNumber} 题正在拆分，先「从此处拆分」或「取消」。</>
+              ) : blockedNumbers === 0 ? '都齐了。' : null}
             </span>
             <button
               type="button"
               className="btn btn-primary btn-small btn-tap"
-              disabled={missingNumbers.length > 0 || rows.length === 0}
+              disabled={!canWrite || busy}
               onClick={() => void commit()}
             >
               写入 {rows.length} 道题
             </button>
           </div>
+          <WarningBar message={error} />
           <ul className="rev-list">
             {rows.map((row, index) => {
               const missing = answerMissing(row);
@@ -511,7 +582,9 @@ export default function ImportView({
                       <div className="body">
                         <div className="stem">
                           <span className="tiny-type">{TYPE_LABELS[row.type]}</span>
-                          {row.stem}
+                          {row.stem.trim()
+                            ? row.stem
+                            : <span className="stem-miss">缺题干</span>}
                         </div>
                         <div className="optsline">
                           {row.type === 'matching'
@@ -581,6 +654,7 @@ export default function ImportView({
               type="button"
               className="btn btn-ghost btn-small"
               onClick={() => {
+                setError('');
                 setStep(1);
                 window.scrollTo({ top: 0 });
               }}
