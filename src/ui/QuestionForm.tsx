@@ -120,8 +120,14 @@ export default function QuestionForm({
     setState((prev) => ({ ...prev, ...patch }));
   }
 
+  /** Editing keeps the question's kind: matching never converts, nothing converts into it. */
+  function typeLocked(next: QuestionType): boolean {
+    if (lockedType === undefined) return false;
+    return lockedType === 'matching' ? next !== 'matching' : next === 'matching';
+  }
+
   function changeType(next: QuestionType) {
-    if (next === type) return;
+    if (next === type || typeLocked(next)) return;
     let nextAnswers = state.answers;
     let cleared = false;
     if (next === 'truefalse' || type === 'truefalse') {
@@ -280,9 +286,7 @@ export default function QuestionForm({
               <option
                 key={value}
                 value={value}
-                disabled={lockedType === 'matching'
-                  ? value !== 'matching'
-                  : lockedType !== undefined && value === 'matching'}
+                disabled={typeLocked(value)}
               >
                 {TYPE_LABELS[value]}
               </option>
