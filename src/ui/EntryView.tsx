@@ -42,6 +42,8 @@ export default function EntryView({
   async function save(input: QuestionInput) {
     const group = groups.find((g) => g.group.id === groupId);
     await core.createQuestion(input, groupId);
+    // The shell's counts come from the group list, so refresh before the toast.
+    await refreshGroups();
     showToast(`已保存到「${group?.group.name ?? ''}」`);
   }
 
