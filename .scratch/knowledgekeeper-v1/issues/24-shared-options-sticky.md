@@ -19,4 +19,5 @@
 - 2026-11-26 · agent：`src/index.css` 给 `.shared` 加 sticky / 限高 / 层级，`.shared-scroll` 包住选项列表；`src/ui/PracticeView.tsx` 补这一层包装。窄屏把 `.match` 从单列 grid 改成 block，否则 sticky 的包含块只有自己那一行高。
   - 验证：`pnpm build`（tsc -b + vite build）通过；`pnpm test` 19 文件 / 96 测试通过。本改动是 CSS / 渲染，按 spec「Testing Decisions」不做 seam 自动化测试。
   - 浏览器验证（Chromium，注入同结构页面 + 构建出的 CSS，16 个子题）：宽屏 1524×824 下滚到 300 / 700 / 1189px，面板 top 恒为 68px；滚到底时面板底边与 `.match` 底边齐平，提交行无遮挡。窄屏 600×800 下 `.match` 为 block，面板 top 恒为 68px。26 个共用选项、视口 700px 高时面板限高 620px，内部 559 / 1383 可滚且标题不动。
+  - 手测数据：`docs/matching-sticky-test-data.md`（可直接粘贴的 4 道题：20 / 8 / 2 个子题的匹配题 + 1 道普通题，覆盖长列表、长选项、短页面、切题）。已用临时测试经 `importFromText` + `commitReview` 验证：4 道题、无缺答案警示、共用选项 10 / 10 / 3、子题 20 / 8 / 2，写入成功。
   - 待人工：真实 iPad Safari 竖屏 / 横屏各滚一次，见 `docs/ipad-manual-checklist.md` 第 7 项。
