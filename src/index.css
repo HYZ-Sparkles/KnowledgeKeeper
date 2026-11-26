@@ -102,6 +102,10 @@
   .favbtn:hover { @apply border-orange-fill text-orange; }
   .favbtn.on { @apply border-[#E6C6AC] bg-[#FBF1E6] text-orange; }
   .favbtn.on svg { fill: currentColor; }
+  /* One row of actions: the primary button, its hint, then the right-hand group. */
+  .toolbar { @apply flex flex-wrap items-center gap-[10px] mt-[18px] mb-[4px]; }
+  .toolbar-side { @apply flex flex-wrap items-center gap-[10px]; }
+
   .switch { @apply inline-flex items-center gap-[7px] text-[13.5px] text-mute; }
   .switch i {
     @apply relative w-8 h-[18px] rounded-[9px] bg-[#DED8CF] flex-none;

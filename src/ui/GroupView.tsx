@@ -134,29 +134,31 @@ export default function GroupView({
               : `没有到期的题，${questionCount} 道全部打乱`}
         </span>
         <div className="grow" />
-        <button
-          className={`switch ${favoriteOnly ? 'on' : ''}`}
-          type="button"
-          role="switch"
-          aria-checked={favoriteOnly}
-          onClick={() => setFavoriteOnly((prev) => !prev)}
-        >
-          <i />只看收藏
-        </button>
-        <button
-          className="btn btn-ghost"
-          type="button"
-          onClick={() => { setRenameText(name); setRenaming(true); }}
-        >
-          重命名
-        </button>
-        <button
-          className="btn btn-ghost btn-danger"
-          type="button"
-          onClick={() => setDeleting(true)}
-        >
-          删除分组
-        </button>
+        <div className="toolbar-side">
+          <button
+            className={`switch ${favoriteOnly ? 'on' : ''}`}
+            type="button"
+            role="switch"
+            aria-checked={favoriteOnly}
+            onClick={() => setFavoriteOnly((prev) => !prev)}
+          >
+            <i />只看收藏
+          </button>
+          <button
+            className="btn btn-ghost"
+            type="button"
+            onClick={() => { setRenameText(name); setRenaming(true); }}
+          >
+            重命名
+          </button>
+          <button
+            className="btn btn-ghost btn-danger"
+            type="button"
+            onClick={() => setDeleting(true)}
+          >
+            删除分组
+          </button>
+        </div>
       </div>
       <hr className="hairline" />
       {questions === null ? null : questions.length === 0 ? (

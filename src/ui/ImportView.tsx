@@ -398,7 +398,7 @@ export default function ImportView({
 
       {step === 1 ? (
         <>
-          <div className="toolbar">
+          <div className="toolbar mt-0 mb-[14px]">
             <input
               ref={fileInputRef}
               className="hidden"
@@ -466,7 +466,7 @@ export default function ImportView({
             </select>
           </label>
           <button
-            className="btn btn-primary"
+            className="btn btn-primary mt-4"
             type="button"
             disabled={busy || extracting || !groupId}
             onClick={() => void startReview()}
