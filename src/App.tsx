@@ -244,14 +244,22 @@ function RightRail({
           <h2 className="mb-[10px] text-[14.5px] font-semibold text-ink-2">
             本轮
           </h2>
-          <p className="m-0 text-t12_5 leading-[1.7] text-mute">
-            {due > 0
-              ? `到期 ${due} 道按到期日从早到晚排在前面，其余 ${total - due} 道打乱跟上。`
-              : `这一组没有到期的题，${total} 道全部打乱。`}
-          </p>
-          <p className="m-0 mt-[6px] text-t12_5 leading-[1.7] text-mute">
-            一轮 {total} 道，做完自动重新打乱，不记录中断位置。
-          </p>
+          {total === 0 ? (
+            <p className="m-0 text-t12_5 leading-[1.7] text-mute">
+              这一组还没有题，先录入或导入。
+            </p>
+          ) : (
+            <>
+              <p className="m-0 text-t12_5 leading-[1.7] text-mute">
+                {due > 0
+                  ? `到期 ${due} 道按到期日从早到晚排在前面，其余 ${total - due} 道打乱跟上。`
+                  : `这一组没有到期的题，${total} 道全部打乱。`}
+              </p>
+              <p className="m-0 mt-[6px] text-t12_5 leading-[1.7] text-mute">
+                一轮 {total} 道，做完自动重新打乱，不记录中断位置。
+              </p>
+            </>
+          )}
         </div>
       </aside>
     );
@@ -272,7 +280,7 @@ function RightRail({
             答案有两个以上字母推断为多选题；选项写「正确 / 错误」或答案是判断符号推断为判断题，其余是单选题。
           </p>
           <p className="text-t12_5 leading-[1.7] text-mute m-0 mt-[6px]">
-            缺答案的题会一直标红并拦住写入，补齐后才能写进分组。
+            缺答案或缺题干的题会一直标红并拦住写入，补齐后才能写进分组。
           </p>
         </div>
       ) : null}

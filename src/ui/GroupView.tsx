@@ -74,11 +74,11 @@ export default function GroupView({
       <Breadcrumb trail={['我的题库', name]} />
       <h1 className="text-t40 font-bold text-ink-2 mb-3 tracking-[-.3px]">{name}</h1>
       <p className="text-t15 text-mute mb-[18px] max-w-[62ch]">
-        {summary?.questionCount ?? 0} 道题，
-        {summary?.correctRate == null
-          ? '尚未练习'
-          : `总体正确率 ${Math.round(summary.correctRate * 100)}%`}，
-        今天到期 {summary?.dueCount ?? 0} 道。到期题排在最前面，最久到期的先出。
+        {`${summary?.questionCount ?? 0} 道题，${
+          summary?.correctRate == null
+            ? '尚未练习'
+            : `总体正确率 ${Math.round(summary.correctRate * 100)}%`
+        }，今天到期 ${summary?.dueCount ?? 0} 道。到期题排在最前面，最久到期的先出。`}
       </p>
       {summary && (
         <>

@@ -96,12 +96,12 @@ export default function QuestionForm({
     if (subs.length < 1) missing.push('至少要有 1 个子题');
     subs.forEach((sub, index) => {
       const label = `子题 ${index + 1}`;
-      if (!sub.stem.trim()) missing.push(`${label}题干不能为空`);
+      if (!sub.stem.trim()) missing.push(`${label} 题干不能为空`);
       if (sub.type === 'single' && sub.answers.length !== 1) {
-        missing.push(`${label}需要恰好 1 个正确答案`);
+        missing.push(`${label} 需要恰好 1 个正确答案`);
       }
       if (sub.type === 'multiple' && sub.answers.length < 2) {
-        missing.push(`${label}至少需要 2 个正确答案`);
+        missing.push(`${label} 至少需要 2 个正确答案`);
       }
     });
   } else if (type === 'truefalse') {
@@ -109,10 +109,10 @@ export default function QuestionForm({
   } else {
     if (options.length < 2) missing.push('至少要有 2 个选项');
     if (type === 'single' && answers.length !== 1) {
-      missing.push('单选题需要恰好 1 个正确选项');
+      missing.push('单选题需要恰好 1 个正确答案');
     }
     if (type === 'multiple' && answers.length < 2) {
-      missing.push('多选题至少需要 2 个正确选项');
+      missing.push('多选题至少需要 2 个正确答案');
     }
   }
 
