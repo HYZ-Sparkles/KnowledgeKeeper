@@ -33,7 +33,7 @@ describe('应用核心 · 粘贴文本导入', () => {
     expect(draft.warnings).toEqual([]);
   });
 
-  it('接受四种题号写法与三种选项字母写法', async () => {
+  it('接受常见题号写法与三种选项字母写法', async () => {
     const core = setup();
     const draft = await core.importFromText([
       '1. 第一题', 'A、甲', 'B．乙', '答案：A',
@@ -50,6 +50,20 @@ describe('应用核心 · 粘贴文本导入', () => {
     expect(draft.questions[0].options).toEqual([
       { letter: 'A', text: '甲' }, { letter: 'B', text: '乙' },
     ]);
+    expect(draft.warnings).toEqual([]);
+  });
+
+  it('全角括号题号也识别，答案不会错位到下一题', async () => {
+    const core = setup();
+    const draft = await core.importFromText([
+      '（1）全角括号的第一题', 'A. 甲', 'B. 乙', '答案：A',
+      '2、第二题', 'A. 甲', 'B. 乙', '答案：B',
+    ].join('\n'));
+
+    expect(draft.questions.map((q) => q.stem)).toEqual([
+      '全角括号的第一题', '第二题',
+    ]);
+    expect(draft.questions.map((q) => q.answerText)).toEqual(['A', 'B']);
     expect(draft.warnings).toEqual([]);
   });
 

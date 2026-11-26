@@ -14,8 +14,8 @@ const TRUE_FALSE_OPTIONS: Option[] = [
   { letter: '×', text: '错误' },
 ];
 
-// 1. / 1、/ (1) / 01 — all four pasted-number styles.
-const QUESTION_LINE = /^\s*(?:\((\d+)\)|(\d+)\s*[.、．]|(\d{2,})\s+)\s*(.*)$/;
+// 1. / 1、/ (1) / （1）/ 01 — every pasted-number style, half- or full-width.
+const QUESTION_LINE = /^\s*(?:[（(](\d+)[）)]|(\d+)\s*[.、．]|(\d{2,})\s+)\s*(.*)$/;
 const OPTION_TOKEN = /([A-Za-z])\s*[.、．]\s*/g;
 const ANSWER_PREFIX = /^\s*答案\s*[:：]\s*(.*)$/;
 const EXPLANATION_PREFIX = /^\s*解析\s*[:：]\s*(.*)$/;
