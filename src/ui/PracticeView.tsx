@@ -233,14 +233,16 @@ export default function PracticeView({
             <div className="match">
               <div className="shared">
                 <h3>共用选项</h3>
-                <ol>
-                  {item.sharedOptions?.map((option) => (
-                    <li key={option.letter}>
-                      <b>{option.letter}</b>
-                      <span>{option.text}</span>
-                    </li>
-                  ))}
-                </ol>
+                <div className="shared-scroll">
+                  <ol>
+                    {item.sharedOptions?.map((option) => (
+                      <li key={option.letter}>
+                        <b>{option.letter}</b>
+                        <span>{option.text}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
               </div>
               <ul className="subs">
                 {subs.map((sub, position) => {

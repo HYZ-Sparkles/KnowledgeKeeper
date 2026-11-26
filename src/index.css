@@ -177,14 +177,29 @@
   .fb-exp b { @apply font-semibold text-ink-2; }
   .fb-next { @apply mt-[14px]; }
 
-  /* 匹配题：内嵌纸底共用选项面板，子题用 44px 字母 chip 作答。 */
+  /* 匹配题：内嵌纸底共用选项面板，子题用 44px 字母 chip 作答。
+     子题多时页面很长，面板必须停在顶栏下方跟着子题一起走，
+     直到最后一个子题滚过才随整块离开。 */
   .match {
     @apply grid gap-[34px] mt-[22px] max-w-[900px];
     grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
   }
-  .shared { @apply self-start border border-rule bg-paper-2 px-4 py-[14px]; }
+  .shared {
+    @apply sticky flex flex-col self-start border border-rule
+           bg-paper-2 px-4 py-[14px];
+    z-index: 1;
+    top: 68px;                    /* 56px sticky 顶栏 + 12px 间隙 */
+    max-height: calc(100vh - 80px);
+    max-height: calc(100dvh - 80px);
+  }
   .shared h3 {
-    @apply m-0 mb-[10px] text-[13px] font-semibold tracking-[.4px] text-mute;
+    @apply m-0 mb-[10px] flex-none text-[13px] font-semibold
+           tracking-[.4px] text-mute;
+  }
+  /* 共用选项很多时只滚面板内部：标题留在原位，也不带走整页滚动。 */
+  .shared-scroll {
+    @apply min-h-0 overflow-y-auto;
+    overscroll-behavior: contain;
   }
   .shared ol { @apply list-none m-0 p-0 text-t14 leading-[1.9]; }
   .shared li { @apply flex gap-2; }
@@ -342,7 +357,14 @@
 }
 @media (max-width: 760px) {
   .two { grid-template-columns: 1fr; }
-  .match { grid-template-columns: minmax(0, 1fr); }
+  /* 单列改成块流：sticky 的包含块要覆盖整段子题列表，
+     留在 grid 里它只占自己那一行，滚过第一个子题就失效。 */
+  .match { display: block; }
+  .shared {
+    margin-bottom: 24px;
+    max-height: 42vh;
+    max-height: 42dvh;
+  }
   .shell { grid-template-columns: minmax(0, 1fr); }
   .rail-left { display: none; }
   .topbar-right { display: none; }
