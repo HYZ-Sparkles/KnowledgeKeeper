@@ -144,7 +144,10 @@ export default function PracticeView({
 
   const item = items?.[index];
 
-  useEffect(() => { onItemChange(item ?? null); }, [item, onItemChange]);
+  // The right rail describes the current question; the finished block has none.
+  useEffect(() => {
+    onItemChange(finished ? null : (item ?? null));
+  }, [item, finished, onItemChange]);
 
   const subs = item?.type === 'matching' ? (item.subQuestions ?? []) : [];
   const unanswered = subs.filter(

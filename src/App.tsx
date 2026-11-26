@@ -213,7 +213,10 @@ function RightRail({
   meta: LibraryMeta | null;
 }) {
   if (route.name === 'practice') {
-    const schedule = practiceItem?.schedule ?? { stage: 0, dueDate: null };
+    // No current question (loading, empty group, or the finished block): the
+    // rail describes one question, so it has nothing to say.
+    if (!practiceItem) return <aside className="rail-right" />;
+    const schedule = practiceItem.schedule;
     return (
       <aside className="rail-right">
         <div className="mb-[26px]">
